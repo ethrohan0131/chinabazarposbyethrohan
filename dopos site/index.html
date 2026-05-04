@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<script src="protect.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CHINA BAZAR POS — Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;overflow:hidden;background:#0A0F1E;}
+
+  /* ── Animated gradient background ── */
+  .bg{position:fixed;inset:0;z-index:0;}
+  .bg-gradient{position:absolute;inset:0;background:linear-gradient(135deg,#0A0F1E 0%,#0D1B3E 40%,#0A1628 70%,#060C1A 100%);}
+  .orb{position:absolute;border-radius:50%;filter:blur(80px);animation:orb-move 8s ease-in-out infinite alternate;}
+  .orb1{width:500px;height:500px;background:rgba(37,99,235,.18);top:-100px;left:-100px;animation-delay:0s;}
+  .orb2{width:400px;height:400px;background:rgba(99,102,241,.15);bottom:-80px;right:-80px;animation-delay:-3s;}
+  .orb3{width:300px;height:300px;background:rgba(16,185,129,.1);top:50%;left:50%;transform:translate(-50%,-50%);animation-delay:-5s;}
+  @keyframes orb-move{0%{transform:translateY(0) scale(1);}100%{transform:translateY(40px) scale(1.1);}}
+
+  /* ── Grid dots ── */
+  .grid{position:fixed;inset:0;z-index:0;background-image:radial-gradient(rgba(255,255,255,.04) 1px,transparent 1px);background-size:32px 32px;}
+
+  /* ── Lock card ── */
+  .card{position:relative;z-index:10;background:rgba(255,255,255,.04);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:40px 36px 36px;width:100%;max-width:400px;box-shadow:0 32px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.05) inset;animation:card-in .6s cubic-bezier(.34,1.56,.64,1) both;}
+  @keyframes card-in{from{opacity:0;transform:translateY(40px) scale(.95);}to{opacity:1;transform:translateY(0) scale(1);}}
+
+  /* ── Logo / brand ── */
+  .logo-wrap{text-align:center;margin-bottom:28px;}
+  .logo-icon{width:72px;height:72px;background:linear-gradient(135deg,#2563EB,#6366F1);border-radius:20px;display:inline-flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:14px;box-shadow:0 8px 32px rgba(37,99,235,.4);animation:logo-pulse 2.5s ease-in-out infinite;}
+  @keyframes logo-pulse{0%,100%{box-shadow:0 8px 32px rgba(37,99,235,.4);}50%{box-shadow:0 8px 48px rgba(99,102,241,.6),0 0 0 8px rgba(37,99,235,.1);}}
+  .brand-name{font-size:22px;font-weight:900;letter-spacing:1.5px;background:linear-gradient(90deg,#60A5FA,#A78BFA,#60A5FA);background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 3s linear infinite;}
+  @keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
+  .brand-sub{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:3px;text-transform:uppercase;margin-top:4px;}
+
+  /* ── Lock icon ── */
+  .lock-label{text-align:center;margin-bottom:20px;}
+  .lock-icon{font-size:28px;display:block;margin-bottom:6px;transition:transform .3s;}
+  .lock-text{font-size:13px;color:rgba(255,255,255,.4);letter-spacing:.5px;}
+
+  /* ── PIN dots ── */
+  .pin-dots{display:flex;gap:14px;justify-content:center;margin-bottom:24px;}
+  .pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:transparent;transition:all .2s;}
+  .pin-dot.filled{background:#60A5FA;border-color:#60A5FA;box-shadow:0 0 10px rgba(96,165,250,.5);transform:scale(1.15);}
+  .pin-dot.error{background:#EF4444;border-color:#EF4444;box-shadow:0 0 10px rgba(239,68,68,.5);}
+  .pin-dot.success{background:#22C55E;border-color:#22C55E;box-shadow:0 0 10px rgba(34,197,94,.5);}
+
+  /* ── Keypad ── */
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .key{padding:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:14px;font-size:20px;font-weight:700;color:rgba(255,255,255,.85);cursor:pointer;text-align:center;transition:all .15s;user-select:none;-webkit-tap-highlight-color:transparent;}
+  .key:hover{background:rgba(96,165,250,.12);border-color:rgba(96,165,250,.25);color:#fff;transform:translateY(-1px);}
+  .key:active{transform:scale(.93);background:rgba(37,99,235,.2);}
+  .key.del{font-size:16px;color:rgba(255,255,255,.5);}
+  .key.zero{grid-column:2;}
+
+  /* ── Error message ── */
+  .err-msg{text-align:center;font-size:12px;color:#F87171;margin-top:14px;height:18px;transition:opacity .3s;opacity:0;}
+  .err-msg.show{opacity:1;}
+
+  /* ── Credits ── */
+  .credits{text-align:center;margin-top:28px;display:flex;flex-direction:column;gap:6px;}
+  .credit-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:20px;padding:5px 14px;font-size:11px;color:rgba(255,255,255,.35);letter-spacing:.5px;}
+  .credit-dot{width:5px;height:5px;border-radius:50%;background:#60A5FA;display:inline-block;animation:dot-blink 1.5s ease infinite;}
+  .credit-dot.purple{background:#A78BFA;animation-delay:.5s;}
+  @keyframes dot-blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+  .credit-name{background:linear-gradient(90deg,#93C5FD,#C4B5FD);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:700;}
+
+  /* ── Unlock animation ── */
+  @keyframes unlock-out{0%{opacity:1;transform:scale(1);}60%{opacity:1;transform:scale(1.05);}100%{opacity:0;transform:scale(1.15);}}
+  .card.unlocking{animation:unlock-out .5s ease forwards;}
+
+  /* ── Shake animation ── */
+  @keyframes shake{0%,100%{transform:translateX(0);}15%{transform:translateX(-8px);}30%{transform:translateX(8px);}45%{transform:translateX(-6px);}60%{transform:translateX(6px);}75%{transform:translateX(-3px);}90%{transform:translateX(3px);}}
+  .card.shake{animation:shake .5s ease;}
+</style>
+</head>
+<body>
+<div class="bg">
+  <div class="bg-gradient"></div>
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+<div class="grid"></div>
+
+<div class="card" id="lockCard">
+  <!-- Brand -->
+  <div class="logo-wrap">
+    <div class="logo-icon">🏪</div>
+    <div class="brand-name">CHINA BAZAR</div>
+    <div class="brand-sub">POS Software</div>
+  </div>
+
+  <!-- Lock -->
+  <div class="lock-label">
+    <span class="lock-icon" id="lockIcon">🔒</span>
+    <span class="lock-text">পাসওয়ার্ড দিন</span>
+  </div>
+
+  <!-- PIN dots -->
+  <div class="pin-dots" id="pinDots">
+    <div class="pin-dot" id="dot0"></div>
+    <div class="pin-dot" id="dot1"></div>
+    <div class="pin-dot" id="dot2"></div>
+    <div class="pin-dot" id="dot3"></div>
+  </div>
+
+  <!-- Keypad -->
+  <div class="keypad">
+    <div class="key" onclick="pressKey('1')">1</div>
+    <div class="key" onclick="pressKey('2')">2</div>
+    <div class="key" onclick="pressKey('3')">3</div>
+    <div class="key" onclick="pressKey('4')">4</div>
+    <div class="key" onclick="pressKey('5')">5</div>
+    <div class="key" onclick="pressKey('6')">6</div>
+    <div class="key" onclick="pressKey('7')">7</div>
+    <div class="key" onclick="pressKey('8')">8</div>
+    <div class="key" onclick="pressKey('9')">9</div>
+    <div class="key del" onclick="pressKey('del')">⌫</div>
+    <div class="key zero" onclick="pressKey('0')">0</div>
+    <div class="key" onclick="pressKey('ok')" style="background:linear-gradient(135deg,#2563EB,#6366F1);color:#fff;border-color:transparent;">✓</div>
+  </div>
+
+  <div class="err-msg" id="errMsg">❌ ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।</div>
+
+  <!-- Credits -->
+  <div class="credits">
+    <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+      <div class="credit-badge">
+        <span class="credit-dot"></span>
+        <span>Developed by <span class="credit-name">ethrohan</span></span>
+        <span class="credit-dot purple"></span>
+      </div>
+      <div class="credit-badge">
+        <span class="credit-dot purple"></span>
+        <span>Secured by <span class="credit-name">ethrohan</span></span>
+        <span class="credit-dot"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PASS = '5040';
+let entered = '';
+
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  if (type === 'key') {
+    osc.frequency.value = 880;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .08);
+    osc.start(); osc.stop(ctx.currentTime + .08);
+  } else if (type === 'success') {
+    [523, 659, 784, 1047].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = f; o.type = 'sine';
+      const t = ctx.currentTime + i * .1;
+      g.gain.setValueAtTime(.12, t);
+      g.gain.exponentialRampToValueAtTime(.001, t + .18);
+      o.start(t); o.stop(t + .2);
+    });
+  } else if (type === 'error') {
+    [300, 220].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = f; o.type = 'sawtooth';
+      const t = ctx.currentTime + i * .15;
+      g.gain.setValueAtTime(.1, t);
+      g.gain.exponentialRampToValueAtTime(.001, t + .2);
+      o.start(t); o.stop(t + .25);
+    });
+  }
+}
+
+function updateDots(state='normal') {
+  for (let i = 0; i < 4; i++) {
+    const d = document.getElementById('dot' + i);
+    d.className = 'pin-dot';
+    if (state === 'error') { d.classList.add('error'); }
+    else if (state === 'success') { d.classList.add('success'); }
+    else if (i < entered.length) { d.classList.add('filled'); }
+  }
+}
+
+function pressKey(k) {
+  if (k === 'del') {
+    entered = entered.slice(0, -1);
+    updateDots();
+    return;
+  }
+  if (k === 'ok') {
+    check();
+    return;
+  }
+  if (entered.length >= 4) return;
+  playSound('key');
+  entered += k;
+  updateDots();
+  if (entered.length === 4) setTimeout(check, 200);
+}
+
+function check() {
+  if (entered === PASS) {
+    // SUCCESS
+    playSound('success');
+    updateDots('success');
+    document.getElementById('lockIcon').textContent = '🔓';
+    document.getElementById('errMsg').classList.remove('show');
+    setTimeout(() => {
+      document.getElementById('lockCard').classList.add('unlocking');
+      setTimeout(() => {
+        sessionStorage.setItem('cb_unlocked', '1');
+        location.href = 'dashboard.html';
+      }, 500);
+    }, 400);
+  } else {
+    // ERROR
+    playSound('error');
+    updateDots('error');
+    const card = document.getElementById('lockCard');
+    card.classList.remove('shake');
+    void card.offsetWidth;
+    card.classList.add('shake');
+    document.getElementById('errMsg').classList.add('show');
+    setTimeout(() => {
+      entered = '';
+      updateDots();
+      document.getElementById('errMsg').classList.remove('show');
+      card.classList.remove('shake');
+    }, 1200);
+  }
+}
+
+// Keyboard support
+document.addEventListener('keydown', e => {
+  if (e.key >= '0' && e.key <= '9') pressKey(e.key);
+  else if (e.key === 'Backspace') pressKey('del');
+  else if (e.key === 'Enter') pressKey('ok');
+});
+</script>
+</body>
+</html>

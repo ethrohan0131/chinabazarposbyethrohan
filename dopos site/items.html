@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<script src="protect.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DSBPOS — আইটেম তালিকা</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="main">
+  <div class="content">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+      <div>
+        <h1 class="page-title" style="margin-bottom:2px;">📦 আইটেম তালিকা</h1>
+        <p class="page-subtitle" style="margin-bottom:0;">ইনভেন্টরি ম্যানেজমেন্ট</p>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline" onclick="openModal('bulk-modal')">📥 বাল্ক যোগ</button>
+        <button class="btn btn-primary" onclick="openAddItem()">+ নতুন আইটেম</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card blue"><div class="stat-label">মোট আইটেম</div><div class="stat-value text-primary" id="s-total">0</div></div>
+      <div class="stat-card green"><div class="stat-label">মোট স্টক মূল্য (ক্রয়)</div><div class="stat-value text-success" id="s-stock-val">৳0</div></div>
+      <div class="stat-card orange"><div class="stat-label">মোট স্টক মূল্য (বিক্রয়)</div><div class="stat-value text-warning" id="s-sale-val">৳0</div></div>
+      <div class="stat-card red"><div class="stat-label">কম স্টক</div><div class="stat-value text-danger" id="s-low">0</div></div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card" style="padding:14px 20px;">
+      <div class="filter-bar" style="margin-bottom:0;">
+        <div class="search-box"><span class="icon">🔍</span><input type="text" id="f-search" placeholder="নাম, কোড বা বারকোড..." oninput="render()"></div>
+        <select class="form-control" id="f-cat" onchange="render()" style="width:150px;"><option value="">সব ক্যাটাগরি</option></select>
+        <select class="form-control" id="f-brand" onchange="render()" style="width:150px;"><option value="">সব ব্র্যান্ড</option></select>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>আইটেম</th><th>কোড</th><th>বারকোড</th><th>ক্যাটাগরি</th><th>ব্র্যান্ড</th>
+              <th class="text-right">ক্রয় মূল্য</th><th class="text-right">বিক্রয় মূল্য</th>
+              <th class="text-right">মজুদ</th><th class="text-right">ইউনিট</th><th>অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-body"><tr><td colspan="10" class="empty-row">কোনো আইটেম নেই।</td></tr></tbody>
+          <tfoot>
+            <tr><td colspan="7">মোট</td><td class="text-right" id="ft-stock">0</td><td colspan="2"></td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Item Modal -->
+<div class="modal-overlay" id="item-modal">
+  <div class="modal" style="max-width:550px;">
+    <div class="modal-header"><h3 id="im-title">📦 নতুন আইটেম</h3><button class="modal-close" onclick="closeModal('item-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="form-group span-2"><label class="form-label">আইটেমের নাম *</label><input type="text" class="form-control" id="i-name" placeholder="আইটেম নাম"></div>
+        <div class="form-group"><label class="form-label">আইটেম কোড</label><input type="text" class="form-control" id="i-code" placeholder="অটো"></div>
+        <div class="form-group"><label class="form-label">বারকোড</label><input type="text" class="form-control" id="i-barcode" placeholder="বারকোড"></div>
+        <div class="form-group"><label class="form-label">ক্যাটাগরি</label><select class="form-control" id="i-cat"><option value="">নেই</option></select></div>
+        <div class="form-group"><label class="form-label">ব্র্যান্ড</label><select class="form-control" id="i-brand"><option value="">নেই</option></select></div>
+        <div class="form-group"><label class="form-label">ক্রয় মূল্য (৳)</label><input type="number" class="form-control" id="i-buy" placeholder="0"></div>
+        <div class="form-group"><label class="form-label">বিক্রয় মূল্য (৳)</label><input type="number" class="form-control" id="i-sell" placeholder="0"></div>
+        <div class="form-group"><label class="form-label">পাইকারি মূল্য (৳)</label><input type="number" class="form-control" id="i-wholesale" placeholder="0"></div>
+        <div class="form-group"><label class="form-label">মজুদ (Stock)</label><input type="number" class="form-control" id="i-stock" placeholder="0"></div>
+        <div class="form-group"><label class="form-label">ইউনিট</label><select class="form-control" id="i-unit"></select></div>
+        <div class="form-group"><label class="form-label">সতর্কতা পরিমাণ</label><input type="number" class="form-control" id="i-alert" value="5" placeholder="5"></div>
+      </div>
+      <input type="hidden" id="i-edit-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('item-modal')">বন্ধ</button>
+      <button class="btn btn-primary btn-sm" onclick="saveItem()">💾 সেভ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Add Modal -->
+<div class="modal-overlay" id="bulk-modal">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header"><h3>📥 বাল্ক আইটেম যোগ</h3><button class="modal-close" onclick="closeModal('bulk-modal')">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">প্রতিটি লাইনে: <code>নাম, ক্রয়মূল্য, বিক্রয়মূল্য, স্টক</code></p>
+      <textarea class="form-control" id="bulk-text" rows="8" placeholder="শার্ট, 200, 350, 50&#10;প্যান্ট, 400, 650, 30&#10;জুতা, 500, 800, 20"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('bulk-modal')">বন্ধ</button>
+      <button class="btn btn-primary btn-sm" onclick="bulkAdd()">📥 যোগ করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stock Update Modal -->
+<div class="modal-overlay" id="stock-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header"><h3>📊 স্টক আপডেট</h3><button class="modal-close" onclick="closeModal('stock-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group mb-1"><label class="form-label">আইটেম</label><input type="text" class="form-control readonly" id="su-name" readonly></div>
+      <div class="form-group mb-1"><label class="form-label">বর্তমান মজুদ</label><input type="text" class="form-control readonly" id="su-cur" readonly></div>
+      <div class="form-group mb-1"><label class="form-label">যোগ/বিয়োগ পরিমাণ</label><input type="number" class="form-control" id="su-qty" placeholder="ধনাত্মক = যোগ, ঋণাত্মক = বিয়োগ"></div>
+      <input type="hidden" id="su-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('stock-modal')">বন্ধ</button>
+      <button class="btn btn-success btn-sm" onclick="updateStock()">✅ আপডেট</button>
+    </div>
+  </div>
+</div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-init.js"></script>
+  <script src="app.js"></script>
+<script>
+initPage('items', 'আইটেম তালিকা');
+
+function loadSelects() {
+  const cats = Store.categories();
+  const brands = Store.brands();
+  const units = Store.units();
+
+  ['i-cat','f-cat'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const isFilter = id.startsWith('f-');
+    el.innerHTML = `<option value="">${isFilter?'সব ক্যাটাগরি':'নেই'}</option>` + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  });
+  ['i-brand','f-brand'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const isFilter = id.startsWith('f-');
+    el.innerHTML = `<option value="">${isFilter?'সব ব্র্যান্ড':'নেই'}</option>` + brands.map(b => `<option value="${b}">${b}</option>`).join('');
+  });
+  const uEl = document.getElementById('i-unit');
+  if (uEl) uEl.innerHTML = units.map(u => `<option value="${u}">${u}</option>`).join('');
+}
+
+function render() {
+  loadSelects();
+  const items = Store.items();
+  const search = (document.getElementById('f-search').value || '').toLowerCase();
+  const cat = document.getElementById('f-cat').value;
+  const brand = document.getElementById('f-brand').value;
+
+  let filtered = items.filter(i => {
+    if (search && !(i.name||'').toLowerCase().includes(search) && !(i.code||'').toLowerCase().includes(search) && !(i.barcode||'').includes(search)) return false;
+    if (cat && i.category !== cat) return false;
+    if (brand && i.brand !== brand) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('tbl-body');
+  let totalStock = 0;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" class="empty-row">কোনো আইটেম পাওয়া যায়নি।</td></tr>';
+  } else {
+    tbody.innerHTML = filtered.map(i => {
+      totalStock += i.stock || 0;
+      const lowClass = (i.stock || 0) <= (i.alertQty || 5) ? ' style="background:#fef2f2;"' : '';
+      return `<tr${lowClass}>
+        <td class="fw-600">${i.name}</td>
+        <td class="text-muted fs-sm">${i.code || '-'}</td>
+        <td class="text-muted fs-sm">${i.barcode || '-'}</td>
+        <td class="fs-sm">${i.category || '-'}</td>
+        <td class="fs-sm">${i.brand || '-'}</td>
+        <td class="text-right">${fmt(i.buyPrice||0)}</td>
+        <td class="text-right fw-600 text-success">${fmt(i.salePrice||0)}</td>
+        <td class="text-right fw-700 ${(i.stock||0)<=(i.alertQty||5)?'text-danger':''}">${i.stock||0}</td>
+        <td class="text-right fs-sm">${i.unit||'পিস'}</td>
+        <td><div class="action-btns">
+          <button class="act-btn view" onclick="openStockUpdate('${i.id}')" title="স্টক">📊</button>
+          <button class="act-btn edit" onclick="editItem('${i.id}')" title="এডিট">✏️</button>
+          <button class="act-btn delete" onclick="delItem('${i.id}')" title="মুছুন">🗑️</button>
+        </div></td></tr>`;
+    }).join('');
+  }
+
+  document.getElementById('ft-stock').textContent = totalStock;
+
+  // Stats
+  let stockVal = 0, saleVal = 0, low = 0;
+  items.forEach(i => {
+    stockVal += (i.buyPrice||0) * (i.stock||0);
+    saleVal += (i.salePrice||0) * (i.stock||0);
+    if ((i.stock||0) <= (i.alertQty||5)) low++;
+  });
+  document.getElementById('s-total').textContent = items.length;
+  document.getElementById('s-stock-val').textContent = fmt(stockVal);
+  document.getElementById('s-sale-val').textContent = fmt(saleVal);
+  document.getElementById('s-low').textContent = low;
+}
+
+function openAddItem() {
+  document.getElementById('im-title').textContent = '📦 নতুন আইটেম';
+  ['i-name','i-code','i-barcode','i-buy','i-sell','i-wholesale','i-stock'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('i-barcode').value = Store.peekBarcode();
+  document.getElementById('i-alert').value = 5;
+  document.getElementById('i-edit-id').value = '';
+  const items = Store.items();
+  document.getElementById('i-code').placeholder = 'ITM-' + String(items.length + 1).padStart(4, '0');
+  openModal('item-modal');
+}
+
+function editItem(id) {
+  const i = Store.items().find(x => x.id === id);
+  if (!i) return;
+  document.getElementById('im-title').textContent = '✏️ আইটেম সম্পাদনা';
+  document.getElementById('i-name').value = i.name || '';
+  document.getElementById('i-code').value = i.code || '';
+  document.getElementById('i-barcode').value = i.barcode || '';
+  document.getElementById('i-buy').value = i.buyPrice || '';
+  document.getElementById('i-sell').value = i.salePrice || '';
+  document.getElementById('i-wholesale').value = i.wholesalePrice || '';
+  document.getElementById('i-stock').value = i.stock || 0;
+  document.getElementById('i-alert').value = i.alertQty || 5;
+  document.getElementById('i-cat').value = i.category || '';
+  document.getElementById('i-brand').value = i.brand || '';
+  document.getElementById('i-unit').value = i.unit || 'পিস';
+  document.getElementById('i-edit-id').value = id;
+  openModal('item-modal');
+}
+
+function saveItem() {
+  const name = document.getElementById('i-name').value.trim();
+  if (!name) { showToast('আইটেমের নাম দিন!', 'error'); return; }
+  const items = Store.items();
+  const editId = document.getElementById('i-edit-id').value;
+  
+  let barcode = document.getElementById('i-barcode').value.trim();
+  if (!editId) {
+    if (!barcode) barcode = Store.nextBarcode();
+    else if (barcode === Store.peekBarcode()) Store.nextBarcode();
+  }
+
+  const data = {
+    name,
+    code: document.getElementById('i-code').value.trim() || ('ITM-' + String(items.length + 1).padStart(4, '0')),
+    barcode: barcode,
+    category: document.getElementById('i-cat').value,
+    brand: document.getElementById('i-brand').value,
+    buyPrice: parseFloat(document.getElementById('i-buy').value) || 0,
+    salePrice: parseFloat(document.getElementById('i-sell').value) || 0,
+    wholesalePrice: parseFloat(document.getElementById('i-wholesale').value) || 0,
+    stock: parseFloat(document.getElementById('i-stock').value) || 0,
+    unit: document.getElementById('i-unit').value || 'পিস',
+    alertQty: parseFloat(document.getElementById('i-alert').value) || 5,
+  };
+
+  if (editId) {
+    const idx = items.findIndex(i => i.id === editId);
+    if (idx >= 0) Object.assign(items[idx], data);
+  } else {
+    data.id = uid();
+    data.createdAt = new Date().toISOString();
+    items.push(data);
+  }
+
+  Store.saveItems(items);
+  closeModal('item-modal');
+  showToast(editId ? 'আইটেম আপডেট হয়েছে!' : 'আইটেম যোগ হয়েছে!', 'success');
+  render();
+}
+
+function delItem(id) {
+  if (!confirm('এই আইটেম মুছবেন?')) return;
+  const items = Store.items().filter(i => i.id !== id);
+  Store.saveItems(items);
+  showToast('আইটেম মুছে ফেলা হয়েছে', 'warning');
+  render();
+}
+
+function openStockUpdate(id) {
+  const i = Store.items().find(x => x.id === id);
+  if (!i) return;
+  document.getElementById('su-name').value = i.name;
+  document.getElementById('su-cur').value = i.stock || 0;
+  document.getElementById('su-qty').value = '';
+  document.getElementById('su-id').value = id;
+  openModal('stock-modal');
+}
+
+function updateStock() {
+  const id = document.getElementById('su-id').value;
+  const qty = parseFloat(document.getElementById('su-qty').value) || 0;
+  if (qty === 0) { showToast('পরিমাণ দিন!', 'error'); return; }
+  const items = Store.items();
+  const i = items.find(x => x.id === id);
+  if (!i) return;
+  i.stock = (i.stock || 0) + qty;
+  Store.saveItems(items);
+  closeModal('stock-modal');
+  showToast('স্টক আপডেট হয়েছে!', 'success');
+  render();
+}
+
+function bulkAdd() {
+  const text = document.getElementById('bulk-text').value.trim();
+  if (!text) { showToast('ডেটা দিন!', 'error'); return; }
+  const items = Store.items();
+  const lines = text.split('\n').filter(l => l.trim());
+  let count = 0;
+  lines.forEach(line => {
+    const parts = line.split(',').map(p => p.trim());
+    if (parts.length < 1 || !parts[0]) return;
+    items.push({
+      id: uid(), name: parts[0],
+      code: 'ITM-' + String(items.length + 1).padStart(4, '0'),
+      barcode: '', category: '', brand: '',
+      buyPrice: parseFloat(parts[1]) || 0,
+      salePrice: parseFloat(parts[2]) || 0,
+      wholesalePrice: 0,
+      stock: parseFloat(parts[3]) || 0,
+      unit: 'পিস', alertQty: 5,
+      createdAt: new Date().toISOString()
+    });
+    count++;
+  });
+  Store.saveItems(items);
+  closeModal('bulk-modal');
+  document.getElementById('bulk-text').value = '';
+  showToast(count + 'টি আইটেম যোগ হয়েছে!', 'success');
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
