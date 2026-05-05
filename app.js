@@ -223,6 +223,7 @@ function sidebarHTML(activePage) {
     { icon:'🛍️', label: t('nav_inventory'), children:[
       { label: t('nav_add_purchase'), page:'purchase', href:'purchase.html' },
       { label: t('nav_purchase_list'), page:'purchase-list', href:'purchase-list.html' },
+      { label: '📦 ' + t('add_item'), page:'items', href:'items.html' },
     ]},
     { icon:'↩️', label: t('nav_returns'), children:[
       { label: t('nav_sales_return'), page:'add-return', href:'returns.html' },
@@ -235,7 +236,10 @@ function sidebarHTML(activePage) {
       { label: t('nav_taxes'), page:'taxes', href:'categories.html' },
     ]},
     { icon:'💸', label: t('nav_expenses'), page:'expenses', href:'expenses.html' },
-    { icon:'📊', label: t('nav_reports'), page:'reports', href:'reports.html' },
+    { icon:'📊', label: t('nav_reports'), children:[
+      { label: '📊 ' + t('nav_reports'), page:'reports', href:'reports.html' },
+      { label: '📑 বিস্তারিত রিপোর্ট', page:'detailed-reports', href:'detailed-reports.html' },
+    ]},
   ];
 
   var navHTML = '';
