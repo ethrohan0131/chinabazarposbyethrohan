@@ -265,7 +265,7 @@ function sidebarHTML(activePage) {
 
   return '<div id="sidebar-backdrop" class="sidebar-backdrop"></div>'
     + '<aside class="sidebar" id="sidebar">'
-    + '<div class="sidebar-brand"><h2>🏪 CHINA BAZAR</h2></div>'
+    + '<div class="sidebar-brand"><h2>🏪 PHOTOVIEW</h2></div>'
     + '<nav class="sidebar-nav">'+navHTML+'</nav>'
     + '<div class="sidebar-version">'+t('version_pro')+'<br><span class="dev-credit">DEVELOPED BY ethrohan</span><br><span class="dev-phone"><a href="tel:01301693237">📞 01301693237</a></span></div>'
     + '<div class="sidebar-footer">'
