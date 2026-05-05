@@ -33,6 +33,20 @@
   .pp-subtotal-row span:last-child { font-weight:800; color:#15803D; font-size:16px; }
   .pp-edit-btn { background:none; border:none; cursor:pointer; font-size:11px; padding:1px 4px; border-radius:4px; transition:all .15s; color:#2563EB; }
   .pp-edit-btn:hover { background:#EFF6FF; transform:scale(1.15); }
+
+  /* Collapsible Items */
+  .items-collapsed .items-rest { display: none; }
+  .items-collapsed.items-expanded .items-rest { display: block; }
+  .items-toggle-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: linear-gradient(135deg, #EEF2FF, #E0E7FF); color: #4F46E5;
+    border: 1px solid #C7D2FE; border-radius: 6px; padding: 3px 10px;
+    font-size: 11px; font-weight: 600; cursor: pointer;
+    transition: all .2s; margin-top: 4px;
+  }
+  .items-toggle-btn:hover { background: linear-gradient(135deg, #E0E7FF, #C7D2FE); transform: scale(1.03); }
+  .items-toggle-btn .toggle-arrow { transition: transform .2s; display: inline-block; }
+  .items-expanded .items-toggle-btn .toggle-arrow { transform: rotate(180deg); }
 </style>
 </head>
 <body>
@@ -110,7 +124,17 @@ function renderList() {
       const curStock = it ? (it.stock||0) : 0;
       return s + Math.min(curStock, i.qty||0);
     }, 0);
-    const itemsHtml = (p.items||[]).map((i,idx) => '<div style="font-size:12px;margin-bottom:2px;display:flex;align-items:center;gap:4px;"><button class="pp-edit-btn" onclick="openPerProductEdit(\''+p.id+'\','+idx+')" title="এডিট">✏️</button><span class="fw-600" style="color:#3B82F6;">'+(i.barcode||'-')+'</span> <span style="color:#4B5563;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;display:inline-block;" title="'+i.name+'">'+i.name+'</span> <span style="color:#9CA3AF;">('+i.qty+' '+(i.unit||'pc')+')</span></div>').join('');
+    const itemsArr = (p.items||[]);
+    const firstItem = itemsArr[0];
+    const restItems = itemsArr.slice(1);
+    const firstHtml = firstItem ? '<div style="font-size:12px;margin-bottom:2px;display:flex;align-items:center;gap:4px;"><button class="pp-edit-btn" onclick="openPerProductEdit(\''+p.id+'\',0)" title="এডিট">✏️</button><span class="fw-600" style="color:#3B82F6;">'+(firstItem.barcode||'-')+'</span> <span style="color:#4B5563;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;display:inline-block;" title="'+firstItem.name+'">'+firstItem.name+'</span> <span style="color:#9CA3AF;">('+firstItem.qty+' '+(firstItem.unit||'pc')+')</span></div>' : '';
+    const restHtml = restItems.map((i,idx) => '<div style="font-size:12px;margin-bottom:2px;display:flex;align-items:center;gap:4px;"><button class="pp-edit-btn" onclick="openPerProductEdit(\''+p.id+'\',' +(idx+1)+')" title="এডিট">✏️</button><span class="fw-600" style="color:#3B82F6;">'+(i.barcode||'-')+'</span> <span style="color:#4B5563;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;display:inline-block;" title="'+i.name+'">'+i.name+'</span> <span style="color:#9CA3AF;">('+i.qty+' '+(i.unit||'pc')+')</span></div>').join('');
+    let itemsHtml = '';
+    if (restItems.length > 0) {
+      itemsHtml = '<div class="items-collapsed" id="ic-'+p.id+'">'+firstHtml+'<div class="items-rest">'+restHtml+'</div><button class="items-toggle-btn" onclick="toggleItems(\''+p.id+'\')" type="button"><span class="toggle-arrow">▼</span> আরও '+restItems.length+'টি আইটেম</button></div>';
+    } else {
+      itemsHtml = firstHtml;
+    }
     return '<tr'+((p.due||0)>0?' style="background:#fef2f2;"':'')+'>'
       +'<td class="fw-600">#'+p.invoiceNo+'</td><td class="text-muted fs-sm">'+fmtDate(p.date)+'</td><td class="fw-600">'+(p.supplierName||'-')+'</td>'
       +'<td>'+itemsHtml+'</td>'
@@ -307,6 +331,17 @@ function savePerProductEdit() {
   closeModal('pp-edit-modal');
   showToast(it.name + ' আপডেট হয়েছে!', 'success');
   renderList();
+}
+function toggleItems(purchId) {
+  const el = document.getElementById('ic-' + purchId);
+  if (!el) return;
+  el.classList.toggle('items-expanded');
+  const btn = el.querySelector('.items-toggle-btn');
+  if (btn) {
+    const isExpanded = el.classList.contains('items-expanded');
+    const count = el.querySelectorAll('.items-rest > div').length;
+    btn.innerHTML = '<span class="toggle-arrow">▼</span> ' + (isExpanded ? 'কম দেখুন' : 'আরও ' + count + 'টি আইটেম');
+  }
 }
 renderList();
 </script>
