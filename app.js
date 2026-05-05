@@ -3,7 +3,7 @@
 
 const translations = {
   // Sidebar & Topbar
-  nav_dashboard: { en: 'Dashboard', bn: 'হোম' },
+  nav_dashboard: { en: 'Dashboard', bn: 'হোম🏪 PHOTOVIEW' },
   nav_sales: { en: 'Sales', bn: 'বিক্রয়' },
   nav_purchase: { en: 'Purchase', bn: 'অ্যাড ক্রয়' },
   nav_purch_list: { en: 'Purchase List', bn: 'ক্রয় তালিকা' },
