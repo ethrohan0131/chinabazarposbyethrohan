@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="bn">
 <head>
   <meta charset="UTF-8">
@@ -86,8 +86,8 @@ function renderAll() {
     units.map((u,i) => `<tr><td class="text-muted">${i+1}</td><td class="fw-600">${u}</td><td><button class="act-btn delete" onclick="delUnit(${i})">🗑️</button></td></tr>`).join('');
 }
 
-function addCat() { const v = document.getElementById('c-name').value.trim(); if(!v){showToast('নাম দিন','error');return;} const d=Store.categories();d.push(v);Store.saveCats(d);document.getElementById('c-name').value='';showToast('ক্যাটাগরি যোগ হয়েছে!');renderAll(); }
-function delCat(i) { const d=Store.categories();d.splice(i,1);Store.saveCats(d);renderAll(); }
+function addCat() { const v = document.getElementById('c-name').value.trim(); if(!v){showToast('নাম দিন','error');return;} const d=Store.categories();d.push(v);Store.saveCategories(d);document.getElementById('c-name').value='';showToast('ক্যাটাগরি যোগ হয়েছে!');renderAll(); }
+function delCat(i) { const d=Store.categories();d.splice(i,1);Store.saveCategories(d);renderAll(); }
 function addBrand() { const v = document.getElementById('b-name').value.trim(); if(!v){showToast('নাম দিন','error');return;} const d=Store.brands();d.push(v);Store.saveBrands(d);document.getElementById('b-name').value='';showToast('ব্র্যান্ড যোগ হয়েছে!');renderAll(); }
 function delBrand(i) { const d=Store.brands();d.splice(i,1);Store.saveBrands(d);renderAll(); }
 function addUnit() { const v = document.getElementById('u-name').value.trim(); if(!v){showToast('নাম দিন','error');return;} const d=Store.units();d.push(v);Store.saveUnits(d);document.getElementById('u-name').value='';showToast('ইউনিট যোগ হয়েছে!');renderAll(); }
