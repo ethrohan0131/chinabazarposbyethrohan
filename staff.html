@@ -1,0 +1,246 @@
+﻿<!DOCTYPE html>
+<html lang="bn">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>DSBPOS — স্টাফ ম্যানেজমেন্ট</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+<div class="main">
+<div class="content">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+    <span style="font-size:16px;font-weight:700;">👨‍💼 স্টাফ ম্যানেজমেন্ট</span>
+    <button class="btn btn-green" onclick="openAddStaff()">+ নতুন স্টাফ</button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">মোট স্টাফ</div><div class="stat-value text-success" id="s-total">0</div></div>
+    <div class="stat-card blue"><div class="stat-label">অ্যাডমিন</div><div class="stat-value text-primary" id="s-admin">0</div></div>
+    <div class="stat-card orange"><div class="stat-label">ম্যানেজার</div><div class="stat-value text-warning" id="s-manager">0</div></div>
+    <div class="stat-card"><div class="stat-label">স্টাফ</div><div class="stat-value" id="s-staff">0</div></div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="search-box"><span class="icon">🔍</span><input type="text" id="f-search" placeholder="নাম বা মোবাইল..." oninput="render()"></div>
+    <select class="form-control" id="f-role" onchange="render()" style="width:140px;">
+      <option value="">সব রোল</option>
+      <option value="অ্যাডমিন">অ্যাডমিন</option>
+      <option value="ম্যানেজার">ম্যানেজার</option>
+      <option value="স্টাফ">স্টাফ</option>
+      <option value="ক্যাশিয়ার">ক্যাশিয়ার</option>
+      <option value="ডেলিভারি">ডেলিভারি</option>
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-header"><h3>স্টাফ তালিকা</h3></div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>নাম</th><th>মোবাইল</th><th>ঠিকানা</th><th>রোল</th><th>যোগদানের তারিখ</th><th class="text-right">বেতন</th><th class="text-center">স্ট্যাটাস</th><th>অ্যাকশন</th></tr></thead>
+        <tbody id="tbl-body"><tr><td colspan="8" class="empty-row">কোনো স্টাফ নেই।</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Add/Edit Staff Modal -->
+<div class="modal-overlay" id="staff-modal">
+<div class="modal" style="max-width:520px;">
+  <div class="modal-header"><h3 id="sm-title">+ নতুন স্টাফ</h3><button class="modal-close" onclick="closeModal('staff-modal')">✕</button></div>
+  <div class="modal-body">
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="form-group span-2"><label class="form-label">নাম *</label><input type="text" class="form-control" id="sf-name" placeholder="স্টাফের পূর্ণ নাম"></div>
+      <div class="form-group"><label class="form-label">মোবাইল *</label><input type="text" class="form-control" id="sf-mobile" placeholder="01XXXXXXXXX"></div>
+      <div class="form-group"><label class="form-label">ইমেইল</label><input type="email" class="form-control" id="sf-email" placeholder="email@example.com"></div>
+      <div class="form-group span-2"><label class="form-label">ঠিকানা</label><input type="text" class="form-control" id="sf-addr" placeholder="বাসা, এলাকা, শহর"></div>
+      <div class="form-group"><label class="form-label">রোল / পদবি *</label>
+        <select class="form-control" id="sf-role">
+          <option value="স্টাফ">স্টাফ</option>
+          <option value="অ্যাডমিন">অ্যাডমিন</option>
+          <option value="ম্যানেজার">ম্যানেজার</option>
+          <option value="ক্যাশিয়ার">ক্যাশিয়ার</option>
+          <option value="ডেলিভারি">ডেলিভারি</option>
+          <option value="সেলসম্যান">সেলসম্যান</option>
+          <option value="গার্ড">গার্ড</option>
+          <option value="অন্যান্য">অন্যান্য</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">যোগদানের তারিখ</label><input type="date" class="form-control" id="sf-join"></div>
+      <div class="form-group"><label class="form-label">মাসিক বেতন (৳)</label><input type="number" class="form-control" id="sf-salary" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">কমিশন (%)</label><input type="number" class="form-control" id="sf-commission" placeholder="0" value="0"></div>
+      <div class="form-group"><label class="form-label">জাতীয় পরিচয়পত্র নং</label><input type="text" class="form-control" id="sf-nid" placeholder="NID নং"></div>
+      <div class="form-group"><label class="form-label">স্ট্যাটাস</label>
+        <select class="form-control" id="sf-status">
+          <option value="active">সক্রিয়</option>
+          <option value="inactive">নিষ্ক্রিয়</option>
+        </select>
+      </div>
+      <div class="form-group span-2"><label class="form-label">নোট</label><textarea class="form-control" id="sf-note" rows="2" placeholder="অতিরিক্ত তথ্য"></textarea></div>
+    </div>
+    <input type="hidden" id="sf-edit-id">
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('staff-modal')">বন্ধ</button>
+    <button class="btn btn-green" onclick="saveStaffMember()">💾 সেভ</button>
+  </div>
+</div>
+</div>
+
+<!-- View Staff Modal -->
+<div class="modal-overlay" id="view-modal">
+<div class="modal" style="max-width:450px;">
+  <div class="modal-header"><h3>👨‍💼 স্টাফ বিবরণ</h3><button class="modal-close" onclick="closeModal('view-modal')">✕</button></div>
+  <div class="modal-body" id="view-content"></div>
+  <div class="modal-footer"><button class="btn btn-ghost btn-sm" onclick="closeModal('view-modal')">বন্ধ</button></div>
+</div>
+</div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-init.js?v=3"></script>
+  <script src="app.js?v=3"></script>
+<script>
+initPage('staff','স্টাফ ম্যানেজমেন্ট');
+
+function render() {
+  const staff = Store.staff();
+  const search = (document.getElementById('f-search').value||'').toLowerCase();
+  const roleFilter = document.getElementById('f-role').value;
+
+  let filtered = staff.filter(s => {
+    if (search && !(s.name||'').toLowerCase().includes(search) && !(s.mobile||'').includes(search)) return false;
+    if (roleFilter && s.role !== roleFilter) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('tbl-body');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-row">কোনো স্টাফ নেই।</td></tr>';
+  } else {
+    tbody.innerHTML = filtered.map(s => {
+      const roleBadge = {
+        'অ্যাডমিন': 'badge-danger',
+        'ম্যানেজার': 'badge-warning',
+        'স্টাফ': 'badge-info',
+        'ক্যাশিয়ার': 'badge-success',
+        'ডেলিভারি': 'badge-draft'
+      }[s.role] || 'badge-info';
+      const statusBadge = s.status === 'inactive' ? '<span class="badge badge-danger">নিষ্ক্রিয়</span>' : '<span class="badge badge-success">সক্রিয়</span>';
+      return `<tr>
+        <td class="fw-600">${s.name}</td>
+        <td class="fs-sm">${s.mobile||'-'}</td>
+        <td class="fs-sm">${s.address||'-'}</td>
+        <td><span class="badge ${roleBadge}">${s.role||'স্টাফ'}</span></td>
+        <td class="fs-sm">${fmtDate(s.joinDate)||'-'}</td>
+        <td class="text-right fw-600">${s.salary ? fmt(s.salary) : '-'}</td>
+        <td class="text-center">${statusBadge}</td>
+        <td><div class="action-btns">
+          <button class="act-btn" onclick="viewStaff('${s.id}')" title="দেখুন">👁️</button>
+          <button class="act-btn" onclick="editStaff('${s.id}')" title="এডিট">✏️</button>
+          <button class="act-btn delete" onclick="delStaff('${s.id}')" title="মুছুন">🗑️</button>
+        </div></td></tr>`;
+    }).join('');
+  }
+
+  // Stats
+  document.getElementById('s-total').textContent = staff.length;
+  document.getElementById('s-admin').textContent = staff.filter(s => s.role === 'অ্যাডমিন').length;
+  document.getElementById('s-manager').textContent = staff.filter(s => s.role === 'ম্যানেজার').length;
+  document.getElementById('s-staff').textContent = staff.filter(s => s.role === 'স্টাফ').length;
+}
+
+function openAddStaff() {
+  document.getElementById('sm-title').textContent = '+ নতুন স্টাফ';
+  ['sf-name','sf-mobile','sf-email','sf-addr','sf-salary','sf-commission','sf-nid','sf-note'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('sf-role').value = 'স্টাফ';
+  document.getElementById('sf-join').value = todayStr();
+  document.getElementById('sf-status').value = 'active';
+  document.getElementById('sf-edit-id').value = '';
+  openModal('staff-modal');
+}
+
+function editStaff(id) {
+  const s = Store.staff().find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('sm-title').textContent = '✏️ স্টাফ সম্পাদনা';
+  document.getElementById('sf-name').value = s.name || '';
+  document.getElementById('sf-mobile').value = s.mobile || '';
+  document.getElementById('sf-email').value = s.email || '';
+  document.getElementById('sf-addr').value = s.address || '';
+  document.getElementById('sf-role').value = s.role || 'স্টাফ';
+  document.getElementById('sf-join').value = s.joinDate || '';
+  document.getElementById('sf-salary').value = s.salary || '';
+  document.getElementById('sf-commission').value = s.commission || 0;
+  document.getElementById('sf-nid').value = s.nid || '';
+  document.getElementById('sf-status').value = s.status || 'active';
+  document.getElementById('sf-note').value = s.note || '';
+  document.getElementById('sf-edit-id').value = id;
+  openModal('staff-modal');
+}
+
+function saveStaffMember() {
+  const name = document.getElementById('sf-name').value.trim();
+  if (!name) { showToast('নাম দিন!','error'); return; }
+  const mobile = document.getElementById('sf-mobile').value.trim();
+
+  const staff = Store.staff();
+  const editId = document.getElementById('sf-edit-id').value;
+  const data = {
+    name, mobile,
+    email: document.getElementById('sf-email').value.trim(),
+    address: document.getElementById('sf-addr').value.trim(),
+    role: document.getElementById('sf-role').value,
+    joinDate: document.getElementById('sf-join').value,
+    salary: parseFloat(document.getElementById('sf-salary').value) || 0,
+    commission: parseFloat(document.getElementById('sf-commission').value) || 0,
+    nid: document.getElementById('sf-nid').value.trim(),
+    status: document.getElementById('sf-status').value,
+    note: document.getElementById('sf-note').value.trim()
+  };
+
+  if (editId) {
+    const idx = staff.findIndex(s => s.id === editId);
+    if (idx >= 0) Object.assign(staff[idx], data);
+  } else {
+    data.id = uid();
+    data.createdAt = new Date().toISOString();
+    staff.push(data);
+  }
+  Store.saveStaff(staff);
+  closeModal('staff-modal');
+  showToast(editId ? 'স্টাফ আপডেট হয়েছে!' : 'স্টাফ যোগ হয়েছে!');
+  render();
+}
+
+function viewStaff(id) {
+  const s = Store.staff().find(x => x.id === id);
+  if (!s) return;
+  const roleBadge = {'অ্যাডমিন':'badge-danger','ম্যানেজার':'badge-warning','স্টাফ':'badge-info'}[s.role] || 'badge-info';
+  document.getElementById('view-content').innerHTML = `
+    <div style="text-align:center;margin-bottom:14px;">
+      <div style="width:60px;height:60px;border-radius:50%;background:var(--green);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:700;">${(s.name||'S')[0]}</div>
+      <div class="fw-700" style="font-size:16px;margin-top:6px;">${s.name}</div>
+      <span class="badge ${roleBadge}">${s.role||'স্টাফ'}</span>
+    </div>
+    <table style="width:100%;font-size:13px;">
+      <tr><td style="color:var(--text-sec);padding:4px 0;">মোবাইল</td><td class="fw-600" style="padding:4px 0;">${s.mobile||'-'}</td></tr>
+      <tr><td style="color:var(--text-sec);padding:4px 0;">ইমেইল</td><td style="padding:4px 0;">${s.email||'-'}</td></tr>
+      <tr><td style="color:var(--text-sec);padding:4px 0;">ঠিকানা</td><td style="padding:4px 0;">${s.address||'-'}</td></tr>
+      <tr><td style="color:var(--text-sec);padding:4px 0;">যোগদান</td><td style="padding:4px 0;">${fmtDate(s.joinDate)||'-'}</td></tr>
+      <tr><td style="color:var(--text-sec);padding:4px 0;">বেতন</td><td class="fw-700 text-success" style="padding:4px 0;">${s.salary ? fmt(s.salary) : '-'}</td></tr>
+      <tr><td style="color:var(--text-sec);padding:4px 0;">কমিশন</td><td style="padding:4px 0;">${s.commission||0}%</td></tr>
+      <tr><td style="color:var(--text-sec);padding:4px 0;">NID</td><td style="padding:4px 0;">${s.nid||'-'}</td></tr>
+      ${s.note ? `<tr><td style="color:var(--text-sec);padding:4px 0;">নোট</td><td style="padding:4px 0;">${s.note}</td></tr>` : ''}
+    </table>`;
+  openModal('view-modal');
+}
+
+function delStaff(id) {
+  if (!confirm('এই স্টাফ মুছবেন?')) return;
+  Store.saveStaff(Store.staff().filter(s => s.id !== id));
+  showToast('স্টাফ মুছে ফেলা হয়েছে', 'warning');
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

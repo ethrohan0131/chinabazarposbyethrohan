@@ -1,0 +1,129 @@
+﻿<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DSBPOS — খরচ</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="main">
+<div class="content">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+    <span style="font-size:16px;font-weight:700;">💸 খরচ তালিকা</span>
+    <button class="btn btn-green" onclick="openModal('add-exp')">+ যোগ</button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card red"><div class="stat-label">মোট খরচ</div><div class="stat-value text-danger" id="s-total">৳0</div></div>
+    <div class="stat-card"><div class="stat-label">এই মাসের খরচ</div><div class="stat-value text-warning" id="s-month">৳0</div></div>
+    <div class="stat-card blue"><div class="stat-label">মোট এন্ট্রি</div><div class="stat-value text-primary" id="s-count">0</div></div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="search-box"><span class="icon">🔍</span><input type="text" id="f-search" placeholder="খুঁজুন..." oninput="render()"></div>
+    <select class="form-control" id="f-cat" onchange="render()"><option value="">সব ক্যাটাগরি</option></select>
+    <input type="date" class="form-control" id="f-from" onchange="render()">
+    <input type="date" class="form-control" id="f-to" onchange="render()">
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-header"><h3>খরচ তালিকা</h3></div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>তারিখ</th><th>ক্যাটাগরি</th><th>বিবরণ</th><th class="text-right">টাকার পরিমাণ</th><th></th></tr></thead>
+        <tbody id="tbl-body"><tr><td colspan="5" class="empty-row">কোনো খরচ নেই।</td></tr></tbody>
+        <tfoot><tr><td colspan="3">মোট</td><td class="text-right" id="ft-total">৳0</td><td></td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Category Management -->
+  <div class="card">
+    <div class="card-title">খরচ ক্যাটাগরি</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;"><input type="text" class="form-control" id="ec-name" placeholder="ক্যাটাগরি নাম" style="flex:1;"><button class="btn btn-green btn-sm" onclick="addExpCat()">+ যোগ</button></div>
+    <div id="ec-list"></div>
+  </div>
+</div>
+</div>
+
+<!-- Add Expense Modal -->
+<div class="modal-overlay" id="add-exp">
+<div class="modal">
+  <div class="modal-header"><h3>+ নতুন খরচ</h3><button class="modal-close" onclick="closeModal('add-exp')">✕</button></div>
+  <div class="modal-body">
+    <div class="form-group mb-1"><label class="form-label">তারিখ</label><input type="date" class="form-control" id="e-date"></div>
+    <div class="form-group mb-1"><label class="form-label">ক্যাটাগরি</label><select class="form-control" id="e-cat"></select></div>
+    <div class="form-group mb-1"><label class="form-label">টাকার পরিমাণ</label><input type="number" class="form-control" id="e-amount" placeholder="0"></div>
+    <div class="form-group"><label class="form-label">বিবরণ / নোট</label><textarea class="form-control" id="e-note" rows="2" placeholder="বিবরণ লিখুন"></textarea></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost btn-sm" onclick="closeModal('add-exp')">বন্ধ</button><button class="btn btn-green btn-sm" onclick="saveExpense()">💾 সেভ</button></div>
+</div>
+</div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-init.js?v=3"></script>
+  <script src="app.js?v=3"></script>
+<script>
+initPage('expenses','খরচ তালিকা');
+document.getElementById('e-date').value = todayStr();
+
+function loadCats() {
+  const cats = Store.expCats();
+  document.getElementById('f-cat').innerHTML = '<option value="">সব ক্যাটাগরি</option>' + cats.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('e-cat').innerHTML = cats.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('ec-list').innerHTML = cats.map((c,i)=>`<span style="display:inline-flex;align-items:center;gap:4px;background:var(--green-light);padding:4px 10px;border-radius:3px;font-size:12px;margin:2px;">${c} <button onclick="delExpCat(${i})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:12px;">✕</button></span>`).join('');
+}
+
+function addExpCat() {
+  const v = document.getElementById('ec-name').value.trim();
+  if(!v){showToast('নাম দিন','error');return;}
+  const d=Store.expCats();d.push(v);Store.saveExpCats(d);document.getElementById('ec-name').value='';loadCats();showToast('ক্যাটাগরি যোগ হয়েছে!');
+}
+function delExpCat(i){const d=Store.expCats();d.splice(i,1);Store.saveExpCats(d);loadCats();}
+
+function saveExpense() {
+  const amount = parseFloat(document.getElementById('e-amount').value)||0;
+  if(!amount){showToast('টাকার পরিমাণ দিন!','error');return;}
+  const exps = Store.expenses();
+  exps.push({ id: uid(), date: document.getElementById('e-date').value, category: document.getElementById('e-cat').value, amount, note: document.getElementById('e-note').value.trim(), createdAt: new Date().toISOString() });
+  Store.saveExp(exps);
+  closeModal('add-exp');
+  document.getElementById('e-amount').value='';document.getElementById('e-note').value='';
+  showToast('খরচ যোগ হয়েছে!');render();
+}
+
+function render() {
+  loadCats();
+  const exps = Store.expenses();
+  const search = (document.getElementById('f-search').value||'').toLowerCase();
+  const cat = document.getElementById('f-cat').value;
+  const from = document.getElementById('f-from').value;
+  const to = document.getElementById('f-to').value;
+  let filtered = exps.filter(e => {
+    if(search && !(e.note||'').toLowerCase().includes(search) && !(e.category||'').toLowerCase().includes(search)) return false;
+    if(cat && e.category !== cat) return false;
+    if(from && e.date < from) return false;
+    if(to && e.date > to) return false;
+    return true;
+  });
+  filtered.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const tbody = document.getElementById('tbl-body');
+  let total = 0;
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="5" class="empty-row">কোনো খরচ নেই।</td></tr>';}
+  else{tbody.innerHTML=filtered.map(e=>{total+=e.amount;return `<tr><td class="fs-sm">${fmtDate(e.date)}</td><td><span class="badge badge-info">${e.category||'-'}</span></td><td class="fs-sm">${e.note||'-'}</td><td class="text-right fw-700 text-danger">${fmt(e.amount)}</td><td><button class="act-btn delete" onclick="delExp('${e.id}')">🗑️</button></td></tr>`;}).join('');}
+  document.getElementById('ft-total').textContent=fmt(total);
+  // Stats
+  let aTotal=0; const thisMonth=todayStr().substring(0,7); let mTotal=0;
+  exps.forEach(e=>{aTotal+=e.amount;if(e.date&&e.date.startsWith(thisMonth))mTotal+=e.amount;});
+  document.getElementById('s-total').textContent=fmt(aTotal);
+  document.getElementById('s-month').textContent=fmt(mTotal);
+  document.getElementById('s-count').textContent=exps.length;
+}
+function delExp(id){if(!confirm('মুছবেন?'))return;Store.saveExp(Store.expenses().filter(e=>e.id!==id));showToast('মুছে ফেলা হয়েছে','warning');render();}
+
+render();
+</script>
+</body>
+</html>

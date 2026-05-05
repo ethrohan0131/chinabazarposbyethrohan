@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DSBPOS — রিপোর্ট</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="main">
+<div class="content">
+  <span style="font-size:16px;font-weight:700;display:block;margin-bottom:14px;">📊 রিপোর্ট</span>
+
+  <!-- Tab Nav -->
+  <div style="display:flex;gap:4px;margin-bottom:16px;background:#F1F5F9;border-radius:10px;padding:4px;">
+    <button onclick="switchTab('summary')" id="tab-summary" class="tab-btn active-tab">📊 সামারি রিপোর্ট</button>
+    <button onclick="switchTab('purchsummary')" id="tab-purchsummary" class="tab-btn">🛍️ ক্রয় সামারি</button>
+    <button onclick="switchTab('party')"   id="tab-party"   class="tab-btn">🤝 পার্টি লেজার</button>
+  </div>
+  <style>
+    .tab-btn{flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:#64748B;transition:all .2s}
+    .active-tab{background:#fff;color:#2563EB;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+    .tab-section{display:none}.tab-section.show{display:block}
+  </style>
+
+  <!-- ========== SUMMARY TAB ========== -->
+  <div class="tab-section show" id="sec-summary">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">মোট বিক্রয়</div><div class="stat-value text-success" id="r-sales">৳0</div></div>
+      <div class="stat-card"><div class="stat-label">মোট ক্রয়</div><div class="stat-value text-primary" id="r-purch">৳0</div></div>
+      <div class="stat-card red"><div class="stat-label">মোট খরচ</div><div class="stat-value text-danger" id="r-exp">৳0</div></div>
+      <div class="stat-card"><div class="stat-label">লাভ / ক্ষতি</div><div class="stat-value" id="r-profit">৳0</div></div>
+      <div class="stat-card red"><div class="stat-label">গ্রাহক বকেয়া</div><div class="stat-value text-danger" id="r-cust-due">৳0</div></div>
+    </div>
+
+    <div class="filter-bar">
+      <input type="date" class="form-control" id="f-from" onchange="render()">
+      <span>→</span>
+      <input type="date" class="form-control" id="f-to" onchange="render()">
+      <button class="btn btn-green btn-sm" onclick="render()">ফিল্টার</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('f-from').value='';document.getElementById('f-to').value='';render();">ক্লিয়ার</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="card">
+        <div class="card-title">💰 বিক্রয় সামারি</div>
+        <table style="width:100%;font-size:12px;">
+          <tr><td>মোট বিক্রয়</td><td class="text-right fw-700 text-success" id="rs-total">৳0</td></tr>
+          <tr><td>মোট আদায়</td><td class="text-right fw-600" id="rs-paid">৳0</td></tr>
+          <tr><td>মোট বাকি</td><td class="text-right fw-700 text-danger" id="rs-due">৳0</td></tr>
+          <tr><td>ইনভয়েস সংখ্যা</td><td class="text-right" id="rs-count">0</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">🛍️ ক্রয় সামারি</div>
+        <table style="width:100%;font-size:12px;">
+          <tr><td>মোট ক্রয়</td><td class="text-right fw-700 text-primary" id="rp-total">৳0</td></tr>
+          <tr><td>মোট পরিশোধ</td><td class="text-right fw-600" id="rp-paid">৳0</td></tr>
+          <tr><td>মোট বাকি</td><td class="text-right fw-700 text-danger" id="rp-due">৳0</td></tr>
+          <tr><td>ইনভয়েস সংখ্যা</td><td class="text-right" id="rp-count">0</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">💸 খরচ সামারি</div>
+        <table style="width:100%;font-size:12px;" id="re-table"></table>
+      </div>
+      <div class="card">
+        <div class="card-title">📈 লাভ / ক্ষতি</div>
+        <table style="width:100%;font-size:12px;">
+          <tr><td>বিক্রয় আয়</td><td class="text-right text-success fw-600" id="pl-income">৳0</td></tr>
+          <tr><td>ক্রয় ব্যয়</td><td class="text-right text-danger fw-600" id="pl-cost">৳0</td></tr>
+          <tr><td>খরচ</td><td class="text-right text-danger fw-600" id="pl-exp">৳0</td></tr>
+          <tr style="border-top:2px solid var(--border);"><td class="fw-700">নেট লাভ/ক্ষতি</td><td class="text-right fw-700" id="pl-net" style="font-size:16px;">৳0</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <div class="card-title">📅 দৈনিক বিক্রয় (সর্বশেষ ১৫ দিন)</div>
+      <div class="table-scroll">
+        <table><thead><tr><th>তারিখ</th><th class="text-right">ইনভয়েস</th><th class="text-right">বিক্রয়</th><th class="text-right">আদায়</th><th class="text-right">বাকি</th></tr></thead>
+        <tbody id="daily-body"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== PARTY LEDGER TAB ========== -->
+  <div class="tab-section" id="sec-party">
+
+    <!-- Filters -->
+    <div class="filter-bar" style="flex-wrap:wrap;">
+      <select class="form-control" id="pl-supplier" onchange="renderPartyLedger()" style="min-width:200px;">
+        <option value="">— সকল সাপ্লাইয়ার —</option>
+      </select>
+      <input type="date" class="form-control" id="pl-from" onchange="renderPartyLedger()">
+      <span>→</span>
+      <input type="date" class="form-control" id="pl-to" onchange="renderPartyLedger()">
+      <select class="form-control" id="pl-view" onchange="renderPartyLedger()" style="min-width:140px;">
+        <option value="detail">বিস্তারিত (A→Z)</option>
+        <option value="summary">সামারি</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('pl-from').value='';document.getElementById('pl-to').value='';document.getElementById('pl-supplier').value='';renderPartyLedger();">ক্লিয়ার</button>
+    </div>
+
+    <!-- Party Summary Cards -->
+    <div class="stats-grid" id="pl-stats" style="display:none;"></div>
+
+    <!-- Selected Party Summary -->
+    <div id="pl-party-summary" style="display:none;" class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-size:18px;font-weight:700;" id="pl-pname">—</div>
+          <div style="font-size:12px;color:#64748B;" id="pl-pinfo">—</div>
+        </div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;">
+          <div style="text-align:center;"><div style="font-size:11px;color:#64748B;">মোট ক্রয়</div><div style="font-size:18px;font-weight:700;color:#2563EB;" id="pls-total">৳0</div></div>
+          <div style="text-align:center;"><div style="font-size:11px;color:#64748B;">পরিশোধ</div><div style="font-size:18px;font-weight:700;color:#22C55E;" id="pls-paid">৳0</div></div>
+          <div style="text-align:center;"><div style="font-size:11px;color:#64748B;">বকেয়া</div><div style="font-size:18px;font-weight:700;color:#EF4444;" id="pls-due">৳0</div></div>
+          <div style="text-align:center;"><div style="font-size:11px;color:#64748B;">ইনভয়েস</div><div style="font-size:18px;font-weight:700;" id="pls-inv">0</div></div>
+          <div style="text-align:center;"><div style="font-size:11px;color:#64748B;">ক্রয় পিস</div><div style="font-size:18px;font-weight:700;" id="pls-qty">0</div></div>
+          <div style="text-align:center;"><div style="font-size:11px;color:#64748B;">বিক্রয় পিস</div><div style="font-size:18px;font-weight:700;color:#F97316;" id="pls-sold">0</div></div>
+          <div style="text-align:center;"><div style="font-size:11px;color:#64748B;">মজুদ পিস</div><div style="font-size:18px;font-weight:700;color:#22C55E;" id="pls-stock">0</div></div>
+        </div>
+      </div>
+      <div id="pl-cat-breakdown" style="margin-top:10px;padding-top:10px;border-top:1px dashed #CBD5E1;font-size:12px;color:#475569;display:flex;gap:15px;flex-wrap:wrap;"></div>
+    </div>
+
+    <!-- Detail Table (invoice by invoice) -->
+    <div id="pl-detail-wrap" class="table-wrap" style="margin-top:0;">
+      <div class="table-header">
+        <h3 id="pl-table-title">📋 ক্রয় বিবরণ (তারিখ অনুযায়ী)</h3>
+        <span style="font-size:12px;color:#94A3B8;" id="pl-row-count"></span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>তারিখ</th>
+            <th>ইনভয়েস</th>
+            <th>সাপ্লাইয়ার</th>
+            <th>পণ্যের নাম</th>
+            <th>ক্যাটাগরি</th>
+            <th class="text-right">ক্রয় পিস</th>
+            <th class="text-right">ক্রয় মূল্য</th>
+            <th class="text-right" style="color:#F97316;">বিক্রয় পিস</th>
+            <th class="text-right" style="color:#22C55E;">মজুদ পিস</th>
+            <th class="text-right">মোট ক্রয়</th>
+          </tr></thead>
+          <tbody id="pl-body"><tr><td colspan="9" class="empty-row">ফিল্টার করুন</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Summary Table (one row per supplier) -->
+    <div id="pl-summary-wrap" class="table-wrap" style="display:none;margin-top:0;">
+      <div class="table-header"><h3>🤝 সাপ্লাইয়ার সামারি (নেট)</h3></div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>#</th>
+            <th>সাপ্লাইয়ার</th>
+            <th class="text-right">ইনভয়েস</th>
+            <th>ক্যাটাগরি অনুযায়ী পিস</th>
+            <th class="text-right">ক্রয় পিস</th>
+            <th class="text-right" style="color:#F97316;">বিক্রয় পিস</th>
+            <th class="text-right" style="color:#22C55E;">মজুদ পিস</th>
+            <th class="text-right">মোট ক্রয়</th>
+            <th class="text-right">পরিশোধ</th>
+            <th class="text-right">বকেয়া</th>
+          </tr></thead>
+          <tbody id="pl-sum-body"><tr><td colspan="10" class="empty-row">ডেটা নেই</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- end party tab -->
+
+  <!-- ========== PURCHASE SUMMARY TAB ========== -->
+  <div class="tab-section" id="sec-purchsummary">
+
+    <!-- Purchase Summary Stats -->
+    <div class="stats-grid">
+      <div class="stat-card green"><div class="stat-label">মোট ক্রয়</div><div class="stat-value text-success" id="ps-total">৳0</div></div>
+      <div class="stat-card blue"><div class="stat-label">মোট পরিশোধ</div><div class="stat-value text-primary" id="ps-paid">৳0</div></div>
+      <div class="stat-card red"><div class="stat-label">মোট বাকি</div><div class="stat-value text-danger" id="ps-due">৳0</div></div>
+      <div class="stat-card orange"><div class="stat-label">মোট ইনভয়েস</div><div class="stat-value text-warning" id="ps-inv">0</div></div>
+      <div class="stat-card"><div class="stat-label">মোট পিস</div><div class="stat-value" id="ps-qty">0</div></div>
+      <div class="stat-card"><div class="stat-label">মোট বিক্রয় পিস</div><div class="stat-value" style="color:#F97316;" id="ps-sold">0</div></div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar" style="flex-wrap:wrap;">
+      <select class="form-control" id="ps-supplier" onchange="renderPurchSummary()" style="min-width:200px;">
+        <option value="">— সকল সাপ্লাইয়ার —</option>
+      </select>
+      <input type="date" class="form-control" id="ps-from" onchange="renderPurchSummary()">
+      <span>→</span>
+      <input type="date" class="form-control" id="ps-to" onchange="renderPurchSummary()">
+      <select class="form-control" id="ps-view" onchange="renderPurchSummary()" style="min-width:160px;">
+        <option value="supplier">সাপ্লাইয়ার অনুযায়ী</option>
+        <option value="item">আইটেম অনুযায়ী</option>
+        <option value="category">ক্যাটাগরি অনুযায়ী</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('ps-from').value='';document.getElementById('ps-to').value='';document.getElementById('ps-supplier').value='';renderPurchSummary();">ক্লিয়ার</button>
+    </div>
+
+    <!-- Purchase Summary Table -->
+    <div class="table-wrap" style="margin-top:0;" id="ps-table-wrap">
+      <div class="table-header">
+        <h3 id="ps-table-title">🛍️ ক্রয় সামারি</h3>
+        <span style="font-size:12px;color:#94A3B8;" id="ps-row-count"></span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead id="ps-thead"></thead>
+          <tbody id="ps-body"><tr><td colspan="10" class="empty-row">ডেটা লোড হচ্ছে...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- end purchsummary tab -->
+
+</div>
+</div>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-init.js?v=3"></script>
+  <script src="app.js?v=3"></script>
+<script>
+window._pageInit = function() {
+  render();
+  loadPartySuppliers();
+  renderPartyLedger();
+  loadPurchSummarySuppliers();
+  renderPurchSummary();
+};
+initPage('reports','রিপোর্ট');
+
+// ====== TAB SWITCH ======
+function switchTab(name) {
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('show'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
+  document.getElementById('sec-' + name).classList.add('show');
+  document.getElementById('tab-' + name).classList.add('active-tab');
+}
+
+// ====== SUMMARY RENDER ======
+function render() {
+  const from = document.getElementById('f-from').value;
+  const to   = document.getElementById('f-to').value;
+  const inRange = d => { if(from && d < from) return false; if(to && d > to) return false; return true; };
+
+  const sales     = Store.sales().filter(s => inRange(s.date));
+  const purchases = Store.purchases().filter(p => inRange(p.date));
+  const expenses  = Store.expenses().filter(e => inRange(e.date));
+
+  let sT=0,sP=0,sD=0; sales.forEach(s=>{sT+=s.grandTotal||0;sP+=s.paid||0;sD+=s.due||0;});
+  let pT=0,pP=0,pD=0; purchases.forEach(p=>{pT+=p.grandTotal||0;pP+=p.paid||0;pD+=p.due||0;});
+  let eT=0; expenses.forEach(e=>{eT+=e.amount||0;});
+  const profit = sT - pT - eT;
+
+  document.getElementById('r-sales').textContent=fmt(sT);
+  document.getElementById('r-purch').textContent=fmt(pT);
+  document.getElementById('r-exp').textContent=fmt(eT);
+  document.getElementById('r-profit').textContent=fmt(profit);
+  document.getElementById('r-profit').style.color = profit>=0?'var(--green-success)':'var(--red)';
+  document.getElementById('r-cust-due').textContent=fmt(sD);
+  document.getElementById('rs-total').textContent=fmt(sT);
+  document.getElementById('rs-paid').textContent=fmt(sP);
+  document.getElementById('rs-due').textContent=fmt(sD);
+  document.getElementById('rs-count').textContent=sales.length;
+  document.getElementById('rp-total').textContent=fmt(pT);
+  document.getElementById('rp-paid').textContent=fmt(pP);
+  document.getElementById('rp-due').textContent=fmt(pD);
+  document.getElementById('rp-count').textContent=purchases.length;
+
+  const expByCat = {};
+  expenses.forEach(e=>{expByCat[e.category||'অন্যান্য']=(expByCat[e.category||'অন্যান্য']||0)+e.amount;});
+  document.getElementById('re-table').innerHTML = Object.keys(expByCat).map(k=>`<tr><td>${k}</td><td class="text-right fw-600 text-danger">${fmt(expByCat[k])}</td></tr>`).join('') + `<tr style="border-top:2px solid var(--border);"><td class="fw-700">মোট</td><td class="text-right fw-700 text-danger">${fmt(eT)}</td></tr>`;
+
+  document.getElementById('pl-income').textContent=fmt(sT);
+  document.getElementById('pl-cost').textContent=fmt(pT);
+  document.getElementById('pl-exp').textContent=fmt(eT);
+  document.getElementById('pl-net').textContent=fmt(profit);
+  document.getElementById('pl-net').style.color = profit>=0?'var(--green-success)':'var(--red)';
+
+  const allSales = Store.sales();
+  const dailyMap = {};
+  allSales.forEach(s=>{const d=s.date;if(!d)return;if(!dailyMap[d])dailyMap[d]={count:0,total:0,paid:0,due:0};dailyMap[d].count++;dailyMap[d].total+=s.grandTotal||0;dailyMap[d].paid+=s.paid||0;dailyMap[d].due+=s.due||0;});
+  const days = Object.keys(dailyMap).sort().reverse().slice(0,15);
+  document.getElementById('daily-body').innerHTML = days.length?days.map(d=>`<tr><td class="fw-600">${fmtDate(d)}</td><td class="text-right">${dailyMap[d].count}</td><td class="text-right fw-700 text-success">${fmt(dailyMap[d].total)}</td><td class="text-right">${fmt(dailyMap[d].paid)}</td><td class="text-right text-danger">${fmt(dailyMap[d].due)}</td></tr>`).join(''):'<tr><td colspan="5" class="empty-row">ডেটা নেই</td></tr>';
+}
+
+// ====== PARTY LEDGER ======
+function loadPartySuppliers() {
+  const sel = document.getElementById('pl-supplier');
+  const supps = Store.suppliers();
+  sel.innerHTML = '<option value="">— সকল সাপ্লাইয়ার —</option>'
+    + supps.map(s => `<option value="${s.id}">${s.name}${s.company?' ('+s.company+')':''}</option>`).join('')
+    + '<option value="N/A">প্রযোজ্য নয় (N/A)</option>';
+}
+
+// Build a map: itemId -> total sold qty from all sales
+function buildSoldMap() {
+  const map = {};
+  Store.sales().forEach(s => {
+    (s.items||[]).forEach(i => {
+      map[i.itemId] = (map[i.itemId]||0) + (i.qty||0);
+    });
+  });
+  return map;
+}
+
+function renderPartyLedger() {
+  const selSupp = document.getElementById('pl-supplier').value;
+  const from    = document.getElementById('pl-from').value;
+  const to      = document.getElementById('pl-to').value;
+  const view    = document.getElementById('pl-view').value;
+  const inRange = d => { if(from && d < from) return false; if(to && d > to) return false; return true; };
+
+  let purchases = Store.purchases().filter(p => inRange(p.date));
+  if (selSupp) purchases = purchases.filter(p => {
+    if (selSupp === 'N/A') return p.supplierId === 'N/A' || p.supplierId === '' || !p.supplierId;
+    return p.supplierId === selSupp;
+  });
+  purchases.sort((a,b) => (a.date||'').localeCompare(b.date||''));
+
+  // Show/hide views
+  const detailWrap  = document.getElementById('pl-detail-wrap');
+  const summaryWrap = document.getElementById('pl-summary-wrap');
+  const partyCard   = document.getElementById('pl-party-summary');
+
+  if (view === 'summary') {
+    detailWrap.style.display  = 'none';
+    summaryWrap.style.display = 'block';
+    partyCard.style.display   = 'none';
+    renderSummaryTable(purchases);
+    return;
+  }
+
+  detailWrap.style.display  = 'block';
+  summaryWrap.style.display = 'none';
+
+  // Selected party header
+  if (selSupp) {
+    const supps = Store.suppliers();
+    const supp  = selSupp === 'N/A' ? {name:'প্রযোজ্য নয় (N/A)', mobile:'', company:''} : supps.find(s=>s.id===selSupp);
+    if (supp) {
+      partyCard.style.display = 'block';
+      document.getElementById('pl-pname').textContent = supp.name;
+      document.getElementById('pl-pinfo').textContent = [supp.company, supp.mobile].filter(Boolean).join(' | ') || '—';
+      const soldMap = buildSoldMap();
+      const allItems = Store.items();
+      let tot=0, paid=0, due=0, pQty=0, sQty=0, stQty=0;
+      let catCount = {};
+      purchases.forEach(p => {
+        tot+=p.grandTotal||0; paid+=p.paid||0; due+=p.due||0;
+        (p.items||[]).forEach(i => {
+          pQty += i.qty||0;
+          sQty += soldMap[i.itemId]||0;
+          const it = allItems.find(x=>x.id===i.itemId);
+          stQty += it ? (it.stock||0) : 0;
+          let cat = (it && it.category) ? it.category : 'অন্যান্য';
+          catCount[cat] = (catCount[cat]||0) + (i.qty||0);
+        });
+      });
+      document.getElementById('pls-total').textContent = fmt(tot);
+      document.getElementById('pls-paid').textContent  = fmt(paid);
+      document.getElementById('pls-due').textContent   = fmt(due);
+      document.getElementById('pls-inv').textContent   = purchases.length;
+      document.getElementById('pls-qty').textContent   = pQty;
+      document.getElementById('pls-sold').textContent  = sQty;
+      document.getElementById('pls-stock').textContent = stQty;
+
+      const catHtml = Object.keys(catCount).map(c => `<div><span style="font-weight:600;">${c}:</span> <span style="color:#2563EB;font-weight:700;">${catCount[c]} পিস</span></div>`).join('');
+      document.getElementById('pl-cat-breakdown').innerHTML = catHtml ? `<strong style="color:#334155;">ক্যাটাগরি অনুযায়ী ক্রয়:</strong> ${catHtml}` : '';
+    }
+  } else {
+    partyCard.style.display = 'none';
+  }
+
+  // Build detail rows with sold + stock cross-reference
+  const soldMap = buildSoldMap();
+  const allItems = Store.items();
+  const rows = [];
+  purchases.forEach(p => {
+    (p.items||[]).forEach(item => {
+      const it = allItems.find(x => x.id === item.itemId);
+      const soldQty  = soldMap[item.itemId] || 0;
+      const stockQty = it ? (it.stock||0) : 0;
+      const category = it && it.category ? it.category : 'অন্যান্য';
+      rows.push({
+        date: p.date, invoice: p.invoiceNo, supplier: p.supplierName||'N/A',
+        name: item.name||'—', itemId: item.itemId, category,
+        qty: item.qty||0, price: item.price||0,
+        total: ((item.price||0)*(item.qty||0))-(item.disc||0),
+        soldQty, stockQty
+      });
+    });
+  });
+
+  document.getElementById('pl-table-title').textContent = selSupp
+    ? `📋 ${document.getElementById('pl-supplier').options[document.getElementById('pl-supplier').selectedIndex].text} — ক্রয় বিবরণ`
+    : '📋 সকল সাপ্লাইয়ার — ক্রয় বিবরণ';
+  document.getElementById('pl-row-count').textContent = `${rows.length} লাইন`;
+
+  const tbody = document.getElementById('pl-body');
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="10" class="empty-row">কোনো ক্রয় পাওয়া যায়নি</td></tr>'; return; }
+
+  tbody.innerHTML = rows.map((r,i) => {
+    const bg = i%2===0?'':'background:#F9FAFB;';
+    const stockColor = r.stockQty===0 ? '#EF4444' : r.stockQty<=5 ? '#F97316' : '#22C55E';
+    return `<tr style="${bg}">
+      <td style="white-space:nowrap;font-weight:600;color:#2563EB;font-size:12px;">${fmtDate(r.date)}</td>
+      <td style="font-size:11px;color:#64748B;">#${r.invoice}</td>
+      <td style="font-size:12px;">${r.supplier}</td>
+      <td class="fw-600">${r.name}</td>
+      <td style="font-size:11px;color:#64748B;">${r.category}</td>
+      <td class="text-right fw-700 text-primary">${r.qty} পিস</td>
+      <td class="text-right">৳${r.price}</td>
+      <td class="text-right fw-700" style="color:#F97316;">${r.soldQty} পিস</td>
+      <td class="text-right fw-700" style="color:${stockColor};">${r.stockQty} পিস</td>
+      <td class="text-right fw-700 text-primary">৳${Math.round(r.total)}</td>
+    </tr>`;
+  }).join('');
+
+  const gTotal=rows.reduce((s,r)=>s+r.total,0), gQty=rows.reduce((s,r)=>s+r.qty,0),
+        gSold=rows.reduce((s,r)=>s+r.soldQty,0), gStock=rows.reduce((s,r)=>s+r.stockQty,0);
+  tbody.innerHTML += `<tr style="background:#EFF6FF;font-weight:700;border-top:2px solid #BFDBFE;">
+    <td colspan="5">মোট (${rows.length} আইটেম)</td>
+    <td class="text-right" style="color:#2563EB;">${gQty} পিস</td>
+    <td></td>
+    <td class="text-right" style="color:#F97316;">${gSold} পিস</td>
+    <td class="text-right" style="color:#22C55E;">${gStock} পিস</td>
+    <td class="text-right" style="color:#2563EB;font-size:14px;">৳${Math.round(gTotal)}</td>
+  </tr>`;
+}
+
+function renderSummaryTable(purchases) {
+  const soldMap  = buildSoldMap();
+  const allItems = Store.items();
+  const map = {};
+  purchases.forEach(p => {
+    const key = p.supplierName || 'N/A';
+    if (!map[key]) map[key] = { invCount:0, pQty:0, sQty:0, stQty:0, total:0, paid:0, due:0, cats:{} };
+    map[key].invCount++;
+    map[key].total += p.grandTotal||0;
+    map[key].paid  += p.paid||0;
+    map[key].due   += p.due||0;
+    (p.items||[]).forEach(i => {
+      map[key].pQty  += i.qty||0;
+      map[key].sQty  += soldMap[i.itemId]||0;
+      const it = allItems.find(x=>x.id===i.itemId);
+      map[key].stQty += it?(it.stock||0):0;
+      let cat = (it && it.category) ? it.category : 'অন্যান্য';
+      map[key].cats[cat] = (map[key].cats[cat]||0) + (i.qty||0);
+    });
+  });
+
+  const keys = Object.keys(map).sort();
+  const tbody = document.getElementById('pl-sum-body');
+  if (!keys.length) { tbody.innerHTML = '<tr><td colspan="10" class="empty-row">কোনো ডেটা নেই</td></tr>'; return; }
+
+  let gtT=0,gtPaid=0,gtDue=0,gtPQ=0,gtSQ=0,gtStQ=0,gtInv=0;
+  tbody.innerHTML = keys.map((k,i) => {
+    const r = map[k];
+    gtT+=r.total; gtPaid+=r.paid; gtDue+=r.due; gtPQ+=r.pQty; gtSQ+=r.sQty; gtStQ+=r.stQty; gtInv+=r.invCount;
+    const dueCell = r.due>0?`<span style="color:#EF4444;font-weight:700;">${fmt(r.due)}</span>`:`<span style="color:#22C55E;">—</span>`;
+    const catStr = Object.keys(r.cats).map(c=>`${c}:${r.cats[c]}`).join(', ');
+    return `<tr>
+      <td class="text-muted">${i+1}</td>
+      <td class="fw-700">${k}</td>
+      <td class="text-right">${r.invCount}</td>
+      <td style="font-size:11px;color:#64748B;">${catStr}</td>
+      <td class="text-right fw-700 text-primary">${r.pQty} পিস</td>
+      <td class="text-right fw-700" style="color:#F97316;">${r.sQty} পিস</td>
+      <td class="text-right fw-700" style="color:#22C55E;">${r.stQty} পিস</td>
+      <td class="text-right fw-700 text-primary">${fmt(r.total)}</td>
+      <td class="text-right text-success">${fmt(r.paid)}</td>
+      <td class="text-right">${dueCell}</td>
+    </tr>`;
+  }).join('');
+
+  tbody.innerHTML += `<tr style="background:#EFF6FF;border-top:2px solid #BFDBFE;font-weight:700;">
+    <td colspan="3">মোট (${keys.length} জন সাপ্লাইয়ার)</td>
+    <td></td>
+    <td class="text-right" style="color:#2563EB;">${gtPQ} পিস</td>
+    <td class="text-right" style="color:#F97316;">${gtSQ} পিস</td>
+    <td class="text-right" style="color:#22C55E;">${gtStQ} পিস</td>
+    <td class="text-right" style="color:#2563EB;font-size:14px;">${fmt(gtT)}</td>
+    <td class="text-right" style="color:#22C55E;">${fmt(gtPaid)}</td>
+    <td class="text-right" style="color:#EF4444;">${fmt(gtDue)}</td>
+  </tr>`;
+}
+
+// ====== PURCHASE SUMMARY TAB ======
+function loadPurchSummarySuppliers() {
+  const sel = document.getElementById('ps-supplier');
+  const supps = Store.suppliers();
+  sel.innerHTML = '<option value="">— সকল সাপ্লাইয়ার —</option>'
+    + supps.map(s => `<option value="${s.id}">${s.name}${s.company?' ('+s.company+')':''}</option>`).join('')
+    + '<option value="N/A">প্রযোজ্য নয় (N/A)</option>';
+}
+
+function renderPurchSummary() {
+  const selSupp = document.getElementById('ps-supplier').value;
+  const from    = document.getElementById('ps-from').value;
+  const to      = document.getElementById('ps-to').value;
+  const view    = document.getElementById('ps-view').value;
+  const inRange = d => { if(from && d < from) return false; if(to && d > to) return false; return true; };
+
+  let purchases = Store.purchases().filter(p => inRange(p.date));
+  if (selSupp) purchases = purchases.filter(p => {
+    if (selSupp === 'N/A') return p.supplierId === 'N/A' || !p.supplierId;
+    return p.supplierId === selSupp;
+  });
+
+  const soldMap  = buildSoldMap();
+  const allItems = Store.items();
+
+  // Stats
+  let gT=0,gP=0,gD=0,gQ=0,gSold=0;
+  purchases.forEach(p => {
+    gT += p.grandTotal||0; gP += p.paid||0; gD += p.due||0;
+    (p.items||[]).forEach(i => {
+      gQ += i.qty||0;
+      gSold += soldMap[i.itemId]||0;
+    });
+  });
+  document.getElementById('ps-total').textContent = fmt(gT);
+  document.getElementById('ps-paid').textContent  = fmt(gP);
+  document.getElementById('ps-due').textContent   = fmt(gD);
+  document.getElementById('ps-inv').textContent   = purchases.length;
+  document.getElementById('ps-qty').textContent   = gQ;
+  document.getElementById('ps-sold').textContent  = gSold;
+
+  const thead = document.getElementById('ps-thead');
+  const tbody = document.getElementById('ps-body');
+
+  if (view === 'supplier') {
+    renderPSBySupplier(purchases, soldMap, allItems, thead, tbody);
+  } else if (view === 'item') {
+    renderPSByItem(purchases, soldMap, allItems, thead, tbody);
+  } else {
+    renderPSByCategory(purchases, soldMap, allItems, thead, tbody);
+  }
+}
+
+function renderPSBySupplier(purchases, soldMap, allItems, thead, tbody) {
+  document.getElementById('ps-table-title').textContent = '🛍️ সাপ্লাইয়ার অনুযায়ী ক্রয় সামারি';
+  thead.innerHTML = '<tr><th>#</th><th>সাপ্লাইয়ার</th><th class="text-right">ইনভয়েস</th><th class="text-right">ক্রয় পিস</th><th class="text-right" style="color:#F97316;">বিক্রয় পিস</th><th class="text-right" style="color:#22C55E;">মজুদ পিস</th><th class="text-right">মোট ক্রয়</th><th class="text-right">পরিশোধ</th><th class="text-right">বকেয়া</th></tr>';
+  const map = {};
+  purchases.forEach(p => {
+    const key = p.supplierName || 'N/A';
+    if (!map[key]) map[key] = {inv:0, pQty:0, sQty:0, stQty:0, total:0, paid:0, due:0};
+    map[key].inv++;
+    map[key].total += p.grandTotal||0;
+    map[key].paid  += p.paid||0;
+    map[key].due   += p.due||0;
+    (p.items||[]).forEach(i => {
+      map[key].pQty += i.qty||0;
+      map[key].sQty += soldMap[i.itemId]||0;
+      const it = allItems.find(x=>x.id===i.itemId);
+      map[key].stQty += it?(it.stock||0):0;
+    });
+  });
+  const keys = Object.keys(map).sort();
+  document.getElementById('ps-row-count').textContent = keys.length + ' সাপ্লাইয়ার';
+  if (!keys.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty-row">ডেটা নেই</td></tr>'; return; }
+  let gtT=0,gtP=0,gtD=0,gtPQ=0,gtSQ=0,gtSt=0;
+  tbody.innerHTML = keys.map((k,i) => {
+    const r = map[k]; gtT+=r.total; gtP+=r.paid; gtD+=r.due; gtPQ+=r.pQty; gtSQ+=r.sQty; gtSt+=r.stQty;
+    const dueC = r.due>0?'color:#EF4444;font-weight:700;':'color:#22C55E;';
+    return `<tr><td class="text-muted">${i+1}</td><td class="fw-700">${k}</td><td class="text-right">${r.inv}</td><td class="text-right fw-700 text-primary">${r.pQty}</td><td class="text-right fw-700" style="color:#F97316;">${r.sQty}</td><td class="text-right fw-700" style="color:#22C55E;">${r.stQty}</td><td class="text-right fw-700 text-primary">${fmt(r.total)}</td><td class="text-right text-success">${fmt(r.paid)}</td><td class="text-right" style="${dueC}">${r.due>0?fmt(r.due):'—'}</td></tr>`;
+  }).join('');
+  tbody.innerHTML += `<tr style="background:#EFF6FF;border-top:2px solid #BFDBFE;font-weight:700;"><td colspan="3">মোট (${keys.length} সাপ্লাইয়ার)</td><td class="text-right" style="color:#2563EB;">${gtPQ}</td><td class="text-right" style="color:#F97316;">${gtSQ}</td><td class="text-right" style="color:#22C55E;">${gtSt}</td><td class="text-right" style="color:#2563EB;font-size:14px;">${fmt(gtT)}</td><td class="text-right" style="color:#22C55E;">${fmt(gtP)}</td><td class="text-right" style="color:#EF4444;">${fmt(gtD)}</td></tr>`;
+}
+
+function renderPSByItem(purchases, soldMap, allItems, thead, tbody) {
+  document.getElementById('ps-table-title').textContent = '🛍️ আইটেম অনুযায়ী ক্রয় সামারি';
+  thead.innerHTML = '<tr><th>#</th><th>আইটেম</th><th>বারকোড</th><th>ক্যাটাগরি</th><th class="text-right">ক্রয় পিস</th><th class="text-right">ক্রয় মূল্য (গড়)</th><th class="text-right" style="color:#F97316;">বিক্রয় পিস</th><th class="text-right" style="color:#22C55E;">মজুদ</th><th class="text-right">মোট ক্রয়</th></tr>';
+  const map = {};
+  purchases.forEach(p => {
+    (p.items||[]).forEach(i => {
+      const key = i.itemId;
+      if (!map[key]) {
+        const it = allItems.find(x=>x.id===key);
+        map[key] = {name:i.name||'—', barcode:i.barcode||(it?it.barcode:'')||'-', category:(it&&it.category)||'অন্যান্য', qty:0, totalCost:0, soldQty:soldMap[key]||0, stock:it?(it.stock||0):0};
+      }
+      map[key].qty += i.qty||0;
+      map[key].totalCost += (i.price||0)*(i.qty||0);
+    });
+  });
+  const entries = Object.values(map).sort((a,b) => b.totalCost-a.totalCost);
+  document.getElementById('ps-row-count').textContent = entries.length + ' আইটেম';
+  if (!entries.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty-row">ডেটা নেই</td></tr>'; return; }
+  let gtQ=0,gtC=0,gtS=0,gtSt=0;
+  tbody.innerHTML = entries.map((r,i) => {
+    const avg = r.qty>0?Math.round(r.totalCost/r.qty):0;
+    gtQ+=r.qty; gtC+=r.totalCost; gtS+=r.soldQty; gtSt+=r.stock;
+    const stColor = r.stock===0?'#EF4444':r.stock<=5?'#F97316':'#22C55E';
+    return `<tr><td class="text-muted">${i+1}</td><td class="fw-700">${r.name}</td><td style="font-size:11px;color:#6B7280;">${r.barcode}</td><td style="font-size:11px;color:#64748B;">${r.category}</td><td class="text-right fw-700 text-primary">${r.qty}</td><td class="text-right">৳${avg}</td><td class="text-right fw-700" style="color:#F97316;">${r.soldQty}</td><td class="text-right fw-700" style="color:${stColor};">${r.stock}</td><td class="text-right fw-700 text-primary">${fmt(r.totalCost)}</td></tr>`;
+  }).join('');
+  tbody.innerHTML += `<tr style="background:#EFF6FF;border-top:2px solid #BFDBFE;font-weight:700;"><td colspan="4">মোট (${entries.length} আইটেম)</td><td class="text-right" style="color:#2563EB;">${gtQ}</td><td></td><td class="text-right" style="color:#F97316;">${gtS}</td><td class="text-right" style="color:#22C55E;">${gtSt}</td><td class="text-right" style="color:#2563EB;font-size:14px;">${fmt(gtC)}</td></tr>`;
+}
+
+function renderPSByCategory(purchases, soldMap, allItems, thead, tbody) {
+  document.getElementById('ps-table-title').textContent = '🛍️ ক্যাটাগরি অনুযায়ী ক্রয় সামারি';
+  thead.innerHTML = '<tr><th>#</th><th>ক্যাটাগরি</th><th class="text-right">আইটেম সংখ্যা</th><th class="text-right">ক্রয় পিস</th><th class="text-right" style="color:#F97316;">বিক্রয় পিস</th><th class="text-right" style="color:#22C55E;">মজুদ পিস</th><th class="text-right">মোট ক্রয়</th></tr>';
+  const map = {};
+  const itemTracker = {};
+  purchases.forEach(p => {
+    (p.items||[]).forEach(i => {
+      const it = allItems.find(x=>x.id===i.itemId);
+      const cat = (it&&it.category)||'অন্যান্য';
+      if (!map[cat]) map[cat] = {qty:0, totalCost:0, soldQty:0, stock:0, items:new Set()};
+      map[cat].qty += i.qty||0;
+      map[cat].totalCost += (i.price||0)*(i.qty||0);
+      if (!itemTracker[i.itemId]) {
+        itemTracker[i.itemId] = true;
+        map[cat].soldQty += soldMap[i.itemId]||0;
+        map[cat].stock += it?(it.stock||0):0;
+      }
+      map[cat].items.add(i.itemId);
+    });
+  });
+  const entries = Object.entries(map).sort((a,b) => b[1].totalCost-a[1].totalCost);
+  document.getElementById('ps-row-count').textContent = entries.length + ' ক্যাটাগরি';
+  if (!entries.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-row">ডেটা নেই</td></tr>'; return; }
+  let gtQ=0,gtC=0,gtS=0,gtSt=0,gtItems=0;
+  tbody.innerHTML = entries.map(([cat,r],i) => {
+    gtQ+=r.qty; gtC+=r.totalCost; gtS+=r.soldQty; gtSt+=r.stock; gtItems+=r.items.size;
+    return `<tr><td class="text-muted">${i+1}</td><td class="fw-700">${cat}</td><td class="text-right">${r.items.size}</td><td class="text-right fw-700 text-primary">${r.qty}</td><td class="text-right fw-700" style="color:#F97316;">${r.soldQty}</td><td class="text-right fw-700" style="color:#22C55E;">${r.stock}</td><td class="text-right fw-700 text-primary">${fmt(r.totalCost)}</td></tr>`;
+  }).join('');
+  tbody.innerHTML += `<tr style="background:#EFF6FF;border-top:2px solid #BFDBFE;font-weight:700;"><td colspan="2">মোট (${entries.length} ক্যাটাগরি)</td><td class="text-right">${gtItems}</td><td class="text-right" style="color:#2563EB;">${gtQ}</td><td class="text-right" style="color:#F97316;">${gtS}</td><td class="text-right" style="color:#22C55E;">${gtSt}</td><td class="text-right" style="color:#2563EB;font-size:14px;">${fmt(gtC)}</td></tr>`;
+}
+</script>
+</body>
+</html>

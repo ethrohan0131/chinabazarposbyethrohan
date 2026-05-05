@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DSBPOS — নতুন বিক্রয়</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="main">
+  <div class="content">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+      <div>
+        <h1 class="page-title" style="margin-bottom:2px;">🛒 নতুন বিক্রয়</h1>
+        <p class="page-subtitle" style="margin-bottom:0;">ইনভয়েস #<span id="inv-no"></span></p>
+      </div>
+    </div>
+
+    <!-- Customer & Date -->
+    <div class="card">
+      <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+        <div class="form-group">
+          <label class="form-label">তারিখ</label>
+          <input type="date" class="form-control" id="s-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">গ্রাহক</label>
+          <select class="form-control" id="s-cust">
+            <option value="">Walk-in Customer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">মূল্য ধরন</label>
+          <select class="form-control" id="s-price-type">
+            <option value="retail">খুচরা (Retail)</option>
+            <option value="wholesale">পাইকারি (Wholesale)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">পেমেন্ট মোড</label>
+          <select class="form-control" id="s-pay-mode">
+            <option value="cash">নগদ</option>
+            <option value="due">বাকি</option>
+            <option value="bkash">বিকাশ</option>
+            <option value="nagad">নগদ (মোবাইল)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Item Search -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🔍</span> আইটেম যোগ করুন</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div class="search-box" style="flex:1;">
+          <span class="icon">🔍</span>
+          <input type="text" id="item-search" placeholder="বারকোড বা আইটেমের নাম দিয়ে সার্চ করুন..." oninput="searchItems()" autocomplete="off">
+        </div>
+      </div>
+      <div id="search-results" style="display:none;border:1px solid var(--card-border);border-radius:8px;margin-top:8px;max-height:200px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- Cart Items -->
+    <div class="card" id="cart-card">
+      <div class="card-title"><span class="icon">🧾</span> আইটেম তালিকা</div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:30px">#</th>
+              <th>আইটেম</th>
+              <th class="text-right" style="width:70px">মূল্য</th>
+              <th class="text-right" style="width:60px">পরিমাণ</th>
+              <th class="text-right" style="width:70px">ডিসকাউন্ট</th>
+              <th class="text-right" style="width:80px">মোট</th>
+              <th style="width:36px"></th>
+            </tr>
+          </thead>
+          <tbody id="cart-body">
+            <tr><td colspan="7" class="empty-row">আইটেম যোগ করুন</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Totals -->
+    <div style="display:grid;grid-template-columns:1fr 380px;gap:20px;">
+      <div class="card">
+        <div class="card-title"><span class="icon">📝</span> নোট</div>
+        <textarea class="form-control" id="s-note" rows="3" placeholder="ইনভয়েসের নোট (ঐচ্ছিক)"></textarea>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;border:none;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:14px;"><span style="color:#94a3b8;">সাবটোটাল</span><span id="t-sub">৳0</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;align-items:center;">
+            <span style="color:#94a3b8;">ডিসকাউন্ট</span>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <input type="number" class="pos-input" id="t-disc" value="0" style="width:70px;color:#fff;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);" oninput="calcTotals()">
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;align-items:center;">
+            <span style="color:#94a3b8;">ভ্যাট / ট্যাক্স</span>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <input type="number" class="pos-input" id="t-vat" value="0" style="width:70px;color:#fff;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);" oninput="calcTotals()">
+              <span style="color:#94a3b8;font-size:12px;">%</span>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;align-items:center;">
+            <span style="color:#94a3b8;">সার্ভিস চার্জ</span>
+            <input type="number" class="pos-input" id="t-service" value="0" style="width:70px;color:#fff;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);" oninput="calcTotals()">
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,.15);margin:8px 0;"></div>
+          <div style="display:flex;justify-content:space-between;font-size:20px;font-weight:800;"><span>মোট</span><span id="t-grand">৳0</span></div>
+          <div style="border-top:1px solid rgba(255,255,255,.15);margin:8px 0;"></div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;align-items:center;">
+            <span style="color:#94a3b8;">পরিশোধ</span>
+            <input type="number" class="pos-input" id="t-paid" value="0" style="width:100px;color:#10b981;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);font-weight:700;font-size:16px;" oninput="calcTotals()">
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:#f87171;"><span>বাকি</span><span id="t-due">৳0</span></div>
+          <div style="margin-top:16px;display:flex;gap:10px;">
+            <button class="btn btn-success btn-lg" onclick="saveSale()" style="flex:1;font-size:16px;padding:12px;">💾 সেভ ও প্রিন্ট</button>
+            <button class="btn btn-outline" onclick="resetSale()" style="padding:12px;color:#fff;border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.05);">🔄 রিসেট</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal-overlay" id="receipt-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header"><h3>🧾 রিসিপ্ট</h3><button class="modal-close" onclick="closeModal('receipt-modal')">✕</button></div>
+    <div class="modal-body" id="receipt-content"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('receipt-modal')">বন্ধ</button>
+      <button class="btn btn-success btn-sm" onclick="printReceipt()">🖨️ প্রিন্ট</button>
+    </div>
+  </div>
+</div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-init.js?v=3"></script>
+  <script src="app.js?v=3"></script>
+<script>
+initPage('add-sale', 'নতুন বিক্রয়');
+
+let cart = [];
+const invNo = Store.peekInvoice();
+document.getElementById('inv-no').textContent = invNo;
+document.getElementById('s-date').value = todayStr();
+
+// Load customers
+function loadCustomers() {
+  const sel = document.getElementById('s-cust');
+  const custs = Store.customers();
+  sel.innerHTML = '<option value="">Walk-in Customer</option>' + custs.map(c => `<option value="${c.id}">${c.name}${c.mobile ? ' — '+c.mobile : ''}</option>`).join('');
+}
+loadCustomers();
+
+// Search items
+function searchItems() {
+  const q = document.getElementById('item-search').value.toLowerCase().trim();
+  const box = document.getElementById('search-results');
+  if (!q) { box.style.display = 'none'; return; }
+  const items = Store.items().filter(i => (i.stock||0) > 0 && ((i.name||'').toLowerCase().includes(q) || (i.code||'').toLowerCase().includes(q) || (i.barcode||'').includes(q)));
+  if (items.length === 0) { box.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:13px;">কোনো আইটেম পাওয়া যায়নি</div>'; box.style.display = 'block'; return; }
+  box.innerHTML = items.slice(0,10).map(i => `
+    <div onclick="addToCart('${i.id}')" style="padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;border-bottom:1px solid #f1f5f9;font-size:13px;transition:background .15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+      <div><span class="fw-600">${i.name}</span> <span class="text-muted fs-sm">${i.code||''}</span></div>
+      <div><span class="text-success fw-600">${fmt(i.salePrice||0)}</span> <span class="text-muted fs-sm">মজুদ: ${i.stock||0}</span></div>
+    </div>`).join('');
+  box.style.display = 'block';
+}
+
+function addToCart(itemId) {
+  const items = Store.items();
+  const item = items.find(i => i.id === itemId);
+  if (!item || (item.stock||0) <= 0) { showToast('স্টক শেষ!', 'error'); return; }
+  
+  const existing = cart.find(c => c.itemId === itemId);
+  if (existing) { 
+    if (existing.qty + 1 > (item.stock||0)) {
+      showToast(`স্টকে মাত্র ${item.stock} পিস আছে!`, 'error');
+      return;
+    }
+    existing.qty++; 
+  } 
+  else {
+    const priceType = document.getElementById('s-price-type').value;
+    const price = priceType === 'wholesale' ? (item.wholesalePrice || item.salePrice || 0) : (item.salePrice || 0);
+    cart.push({ itemId: item.id, name: item.name, code: item.code || '', price, qty: 1, disc: 0 });
+  }
+  document.getElementById('item-search').value = '';
+  document.getElementById('search-results').style.display = 'none';
+  renderCart();
+}
+
+function removeFromCart(idx) { cart.splice(idx, 1); renderCart(); }
+
+function updateCartField(idx, field, val) {
+  if (field === 'qty') {
+    const items = Store.items();
+    const item = items.find(i => i.id === cart[idx].itemId);
+    const reqQty = parseInt(val) || 1;
+    if (item && reqQty > (item.stock||0)) {
+      showToast(`স্টকে মাত্র ${item.stock} পিস আছে!`, 'error');
+      cart[idx].qty = item.stock || 1;
+    } else {
+      cart[idx].qty = reqQty;
+    }
+  } else {
+    cart[idx][field] = parseFloat(val) || 0;
+  }
+  renderCart();
+}
+
+function renderCart() {
+  const tbody = document.getElementById('cart-body');
+  if (cart.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="empty-row">আইটেম যোগ করুন</td></tr>'; calcTotals(); return; }
+  tbody.innerHTML = cart.map((c, i) => {
+    const lineTotal = (c.price * c.qty) - c.disc;
+    return `<tr>
+      <td class="text-muted">${i+1}</td>
+      <td><span class="fw-600">${c.name}</span> <span class="text-muted fs-sm">${c.code}</span></td>
+      <td class="text-right"><input type="number" class="pos-input" value="${c.price}" onchange="updateCartField(${i},'price',this.value)" style="width:70px;"></td>
+      <td class="text-right"><input type="number" class="pos-input" value="${c.qty}" min="1" onchange="updateCartField(${i},'qty',this.value)" style="width:55px;"></td>
+      <td class="text-right"><input type="number" class="pos-input" value="${c.disc}" onchange="updateCartField(${i},'disc',this.value)" style="width:65px;"></td>
+      <td class="text-right fw-700">${fmt(lineTotal)}</td>
+      <td><button class="pos-remove" onclick="removeFromCart(${i})">✕</button></td>
+    </tr>`;
+  }).join('');
+  calcTotals();
+}
+
+function calcTotals() {
+  const sub = cart.reduce((s, c) => s + (c.price * c.qty) - c.disc, 0);
+  const disc = parseFloat(document.getElementById('t-disc').value) || 0;
+  const vatPct = parseFloat(document.getElementById('t-vat').value) || 0;
+  const service = parseFloat(document.getElementById('t-service').value) || 0;
+  const afterDisc = sub - disc;
+  const vat = afterDisc * (vatPct / 100);
+  const grand = afterDisc + vat + service;
+  const paid = parseFloat(document.getElementById('t-paid').value) || 0;
+  const due = grand - paid;
+
+  document.getElementById('t-sub').textContent = fmt(sub);
+  document.getElementById('t-grand').textContent = fmt(grand);
+  document.getElementById('t-due').textContent = fmt(due);
+  document.getElementById('t-due').style.color = due > 0 ? '#f87171' : '#10b981';
+}
+
+function saveSale() {
+  if (cart.length === 0) { showToast('আইটেম যোগ করুন!', 'error'); return; }
+  const sub = cart.reduce((s, c) => s + (c.price * c.qty) - c.disc, 0);
+  const disc = parseFloat(document.getElementById('t-disc').value) || 0;
+  const vatPct = parseFloat(document.getElementById('t-vat').value) || 0;
+  const service = parseFloat(document.getElementById('t-service').value) || 0;
+  const afterDisc = sub - disc;
+  const vat = afterDisc * (vatPct / 100);
+  const grand = afterDisc + vat + service;
+  const paid = parseFloat(document.getElementById('t-paid').value) || 0;
+  const due = grand - paid;
+
+  const custId = document.getElementById('s-cust').value;
+  const custs = Store.customers();
+  const cust = custs.find(c => c.id === custId);
+  const invoiceNo = Store.nextInvoice();
+
+  const sale = {
+    id: uid(), invoiceNo, date: document.getElementById('s-date').value,
+    customerId: custId, customerName: cust ? cust.name : 'Walk-in',
+    items: cart.map(c => ({...c})), subtotal: sub, discount: disc, vatPct, vat, serviceCharge: service,
+    grandTotal: grand, paid, due, payMode: document.getElementById('s-pay-mode').value,
+    note: document.getElementById('s-note').value.trim(), createdAt: new Date().toISOString()
+  };
+
+  // Save sale
+  const sales = Store.sales();
+  sales.push(sale);
+  Store.saveSales(sales);
+
+  // Update stock
+  const items = Store.items();
+  cart.forEach(c => {
+    const item = items.find(i => i.id === c.itemId);
+    if (item) item.stock = (item.stock || 0) - c.qty;
+  });
+  Store.saveItems(items);
+
+  // Update customer due
+  if (cust && due > 0) {
+    cust.due = (cust.due || 0) + due;
+    Store.saveCust(custs);
+  }
+
+  showToast('বিক্রয় সফলভাবে সেভ হয়েছে!', 'success');
+  showReceiptModal(sale);
+  cart = [];
+  renderCart();
+  document.getElementById('inv-no').textContent = Store.peekInvoice();
+}
+
+function showReceiptModal(sale) {
+  const shopName = Store.shopName();
+  const shopAddr = Store.shopAddr();
+  const shopPhone = Store.shopPhone();
+  document.getElementById('receipt-content').innerHTML = `
+    <div class="receipt" id="receipt-printable">
+      <div class="r-center"><div class="r-shop">${shopName}</div><div class="r-sub">${shopAddr}</div><div class="r-sub">${shopPhone}</div></div>
+      <div class="r-line"></div>
+      <div class="r-center"><div class="r-title">SALES INVOICE</div></div>
+      <div class="r-line"></div>
+      <div class="r-row"><span>Invoice#: ${sale.invoiceNo}</span><span>Date: ${fmtDate(sale.date)}</span></div>
+      <div class="r-row"><span>Customer: ${sale.customerName}</span></div>
+      <div class="r-line"></div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead><tr><th style="text-align:left;border-bottom:1px solid #ccc;padding:3px 0;">Item</th><th style="text-align:right;border-bottom:1px solid #ccc;">Qty</th><th style="text-align:right;border-bottom:1px solid #ccc;">Price</th><th style="text-align:right;border-bottom:1px solid #ccc;">Total</th></tr></thead>
+        <tbody>${sale.items.map(i => `<tr><td style="padding:2px 0;">${i.name}</td><td style="text-align:right;">${i.qty}</td><td style="text-align:right;">${i.price}</td><td style="text-align:right;">${i.price*i.qty - i.disc}</td></tr>`).join('')}</tbody>
+      </table>
+      <div class="r-line"></div>
+      <div class="r-total-row"><span>Subtotal:</span><span>${sale.subtotal}</span></div>
+      ${sale.discount ? `<div class="r-total-row"><span>Discount:</span><span>-${sale.discount}</span></div>` : ''}
+      ${sale.vat ? `<div class="r-total-row"><span>VAT (${sale.vatPct}%):</span><span>+${Math.round(sale.vat)}</span></div>` : ''}
+      ${sale.serviceCharge ? `<div class="r-total-row"><span>Service:</span><span>+${sale.serviceCharge}</span></div>` : ''}
+      <div class="r-line"></div>
+      <div class="r-total-row big"><span>Grand Total:</span><span>${Math.round(sale.grandTotal)}</span></div>
+      <div class="r-total-row"><span>Paid:</span><span>${sale.paid}</span></div>
+      ${sale.due > 0 ? `<div class="r-total-row r-due"><span>Due:</span><span>${Math.round(sale.due)}</span></div>` : ''}
+      <div class="r-line"></div>
+      <div class="r-center"><div class="r-sub" style="margin-top:6px;">ধন্যবাদ! আবার আসবেন।</div></div>
+    </div>`;
+  openModal('receipt-modal');
+}
+
+function printReceipt() {
+  const content = document.getElementById('receipt-printable').innerHTML;
+  const w = window.open('','_blank','width=400,height=700');
+  w.document.write(`<html><head><title>Receipt</title><style>body{font-family:'Courier New',monospace;font-size:12px;line-height:1.7;padding:10px;max-width:80mm;margin:0 auto;}.r-center{text-align:center;}.r-shop{font-size:15px;font-weight:700;}.r-sub{font-size:10px;color:#666;}.r-line{border-top:1px dashed #999;margin:6px 0;}.r-row{display:flex;justify-content:space-between;}.r-title{font-size:13px;font-weight:700;letter-spacing:2px;}.r-total-row{display:flex;justify-content:space-between;padding:2px 0;}.r-total-row.big{font-size:15px;font-weight:700;padding:4px 0;}.r-due{color:#c00;font-weight:700;}</style></head><body>${content}</body></html>`);
+  w.document.close();
+  setTimeout(() => w.print(), 400);
+}
+
+function resetSale() {
+  cart = [];
+  document.getElementById('t-disc').value = 0;
+  document.getElementById('t-vat').value = 0;
+  document.getElementById('t-service').value = 0;
+  document.getElementById('t-paid').value = 0;
+  document.getElementById('s-note').value = '';
+  renderCart();
+}
+
+renderCart();
+</script>
+</body>
+</html>
