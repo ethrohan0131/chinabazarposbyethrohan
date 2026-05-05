@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSBPOS — ক্রয়</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .purchase-header {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 10px 0; margin-bottom: 6px;
+  }
+  .purchase-header input, .purchase-header select {
+    padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 13px; background: var(--card-bg); color: var(--text);
+  }
+  .purchase-header input[type="date"] { width: 150px; }
+  .purchase-header .inv-box {
+    background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E40AF;
+    padding: 8px 14px; border-radius: 6px; font-weight: 700; font-size: 13px;
+    min-width: 80px; text-align: center;
+  }
+  .purchase-header select { min-width: 180px; }
+
+  /* Inline Item Entry Row */
+  .item-entry-row {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    padding: 10px 14px; background: linear-gradient(135deg, #F0FDF4, #ECFDF5);
+    border: 2px solid #BBF7D0; border-radius: 10px; margin-bottom: 10px;
+  }
+  .item-entry-row select, .item-entry-row input {
+    padding: 8px 8px; border: 1px solid #D1D5DB; border-radius: 6px;
+    font-size: 13px; background: #fff; color: #1E293B;
+  }
+  .item-entry-row select:focus, .item-entry-row input:focus {
+    border-color: #22C55E; outline: none; box-shadow: 0 0 0 2px rgba(34,197,94,0.15);
+  }
+  .item-entry-row .ie-cat { width: 130px; }
+  .item-entry-row .ie-desc { flex: 1; min-width: 120px; }
+  .item-entry-row .ie-size { width: 70px; }
+  .item-entry-row .ie-qty { width: 55px; text-align: center; }
+  .item-entry-row .ie-buy { width: 75px; text-align: right; }
+  .item-entry-row .ie-sale { width: 75px; text-align: right; }
+  .item-entry-row .ie-barcode { width: 100px; }
+
+  /* Item Picker Hamburger Button */
+  .ie-picker-btn {
+    background: linear-gradient(135deg, #6366F1, #818CF8);
+    color: #fff; border: none; border-radius: 8px;
+    padding: 8px 10px; font-size: 16px; cursor: pointer;
+    transition: all .2s; display: flex; align-items: center;
+    justify-content: center; min-width: 38px; height: 38px;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.25);
+  }
+  .ie-picker-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 14px rgba(99,102,241,0.4);
+  }
+  .ie-picker-btn svg {
+    width: 20px; height: 20px; fill: #fff;
+  }
+
+  /* Item Picker Dropdown Panel */
+  .item-picker-overlay {
+    display: none; position: fixed; inset: 0; z-index: 9998;
+    background: rgba(0,0,0,0.35); backdrop-filter: blur(3px);
+    animation: ipFadeIn .2s ease;
+  }
+  .item-picker-overlay.active { display: flex; align-items: center; justify-content: center; }
+  @keyframes ipFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes ipSlideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .item-picker-panel {
+    background: #fff; border-radius: 14px; width: 94%; max-width: 520px;
+    max-height: 75vh; display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25); animation: ipSlideUp .25s ease;
+    overflow: hidden;
+  }
+  [data-theme="dark"] .item-picker-panel {
+    background: #1E293B; border: 1px solid #334155;
+  }
+  .item-picker-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid #E2E8F0;
+    background: linear-gradient(135deg, #6366F1, #818CF8);
+    color: #fff;
+  }
+  .item-picker-header h3 { margin: 0; font-size: 15px; font-weight: 700; }
+  .item-picker-close {
+    background: rgba(255,255,255,0.2); border: none; color: #fff;
+    width: 30px; height: 30px; border-radius: 50%; font-size: 16px;
+    cursor: pointer; transition: all .2s; display: flex;
+    align-items: center; justify-content: center;
+  }
+  .item-picker-close:hover { background: rgba(255,255,255,0.35); }
+
+  .item-picker-search {
+    padding: 12px 16px; border-bottom: 1px solid #F1F5F9;
+  }
+  .item-picker-search input {
+    width: 100%; padding: 10px 14px; border: 2px solid #E2E8F0;
+    border-radius: 8px; font-size: 14px; outline: none;
+    background: #F8FAFC; color: #1E293B; transition: border-color .2s;
+  }
+  [data-theme="dark"] .item-picker-search input {
+    background: #0F172A; border-color: #334155; color: #E2E8F0;
+  }
+  .item-picker-search input:focus { border-color: #6366F1; }
+
+  .item-picker-list {
+    flex: 1; overflow-y: auto; padding: 6px 0;
+  }
+  .item-picker-list::-webkit-scrollbar { width: 6px; }
+  .item-picker-list::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+
+  .ip-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 18px; cursor: pointer; transition: all .15s;
+    border-bottom: 1px solid #F8FAFC;
+  }
+  .ip-item:hover { background: #EEF2FF; }
+  [data-theme="dark"] .ip-item:hover { background: #334155; }
+  .ip-item-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, #E0E7FF, #C7D2FE);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  [data-theme="dark"] .ip-item-icon { background: linear-gradient(135deg, #312E81, #3730A3); }
+  .ip-item-info { flex: 1; min-width: 0; }
+  .ip-item-name {
+    font-weight: 600; font-size: 13px; color: #1E293B;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  [data-theme="dark"] .ip-item-name { color: #E2E8F0; }
+  .ip-item-meta {
+    font-size: 11px; color: #9CA3AF; margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ip-item-price {
+    text-align: right; flex-shrink: 0;
+  }
+  .ip-item-buy { font-size: 12px; color: #6B7280; }
+  .ip-item-sale { font-size: 13px; font-weight: 700; color: #16A34A; }
+
+  .ip-empty {
+    padding: 30px 18px; text-align: center; color: #9CA3AF; font-size: 14px;
+  }
+  .ip-add-link {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 12px 18px; border-top: 1px solid #E2E8F0;
+    color: #6366F1; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .15s; text-decoration: none;
+  }
+  .ip-add-link:hover { background: #EEF2FF; }
+  [data-theme="dark"] .ip-add-link { border-top-color: #334155; color: #818CF8; }
+  [data-theme="dark"] .ip-add-link:hover { background: #334155; }
+  .ie-add-btn {
+    background: linear-gradient(135deg, #22C55E, #16A34A); color: #fff;
+    border: none; border-radius: 8px; padding: 8px 14px; font-size: 16px;
+    font-weight: 700; cursor: pointer; transition: all .2s; display: flex;
+    align-items: center; gap: 4px;
+  }
+  .ie-add-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(34,197,94,0.35); }
+  .ie-clear-btn {
+    background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA;
+    border-radius: 8px; padding: 8px 12px; font-size: 14px; cursor: pointer;
+    transition: all .2s;
+  }
+  .ie-clear-btn:hover { background: #FECACA; }
+
+  /* Cart Table Styling */
+  .cart-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .cart-table thead th {
+    background: linear-gradient(135deg, #2563EB, #3B82F6);
+    color: #fff; padding: 10px 8px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.5px; font-weight: 700;
+  }
+  .cart-table thead th:first-child { border-radius: 8px 0 0 0; }
+  .cart-table thead th:last-child { border-radius: 0 8px 0 0; }
+  .cart-table tbody td {
+    padding: 8px 8px; border-bottom: 1px solid #F1F5F9;
+    vertical-align: middle;
+  }
+  .cart-table tbody tr:hover { background: #F8FAFC; }
+  .cart-table .del-btn {
+    background: #FEE2E2; color: #DC2626; border: none; border-radius: 6px;
+    padding: 5px 10px; font-size: 13px; cursor: pointer; font-weight: 600;
+    transition: all .2s;
+  }
+  .cart-table .del-btn:hover { background: #DC2626; color: #fff; }
+  .cart-table .edit-input {
+    border: 1px solid #E2E8F0; border-radius: 4px; padding: 5px 6px;
+    font-size: 12px; text-align: right; background: #fff; width: 65px;
+  }
+  .cart-table .edit-input:focus { border-color: #2563EB; outline: none; }
+
+  /* Bottom bar */
+  .purchase-bottom {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px; margin-top: 14px; padding: 14px 16px;
+    background: var(--card-bg); border-radius: 10px; border: 1px solid var(--card-border);
+  }
+  .purchase-bottom .total-box {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .purchase-bottom .total-label {
+    font-size: 16px; font-weight: 800; color: var(--text);
+  }
+  .purchase-bottom .total-value {
+    font-size: 22px; font-weight: 900; color: #DC2626;
+    background: #FEF2F2; padding: 6px 18px; border-radius: 8px;
+    border: 2px solid #FECACA; min-width: 120px; text-align: center;
+  }
+
+  /* Payment section */
+  .payment-section {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-top: 12px; padding: 12px 16px; background: linear-gradient(135deg, #0F172A, #1E293B);
+    border-radius: 10px; color: #fff;
+  }
+  .payment-section label { font-size: 13px; color: #94A3B8; font-weight: 600; }
+  .payment-section input, .payment-section select {
+    padding: 7px 10px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;
+    background: rgba(255,255,255,0.1); color: #fff; font-size: 13px;
+  }
+  .payment-section input:focus, .payment-section select:focus {
+    border-color: #60A5FA; outline: none;
+  }
+  .payment-section .due-val { color: #F87171; font-weight: 800; font-size: 16px; }
+</style>
+</head>
+<body>
+<div class="main">
+<div class="content">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:8px;">
+    <div>
+      <h1 class="page-title" style="margin-bottom:2px;">🛍️ ক্রয় / Purchase</h1>
+      <p class="page-subtitle" style="margin-bottom:0;">সরাসরি পণ্য যোগ করুন ও ক্রয় সেভ করুন</p>
+    </div>
+    <a href="purchase-list.html" class="btn btn-outline" style="font-size:13px;">📋 ক্রয় হিস্ট্রি</a>
+  </div>
+
+  <div class="card" style="padding:14px 18px;">
+    <!-- Purchase Header: Date, Invoice, Supplier -->
+    <div class="purchase-header">
+      <input type="date" id="p-date">
+      <div class="inv-box" id="p-inv-no"></div>
+      <div style="display:flex;gap:4px;flex:1;min-width:180px;">
+        <select class="form-control" id="p-supp" style="flex:1;"><option value="">সাপ্লাইয়ার সিলেক্ট...</option></select>
+        <button class="btn btn-primary btn-sm" onclick="openModal('supp-modal')" title="নতুন সাপ্লাইয়ার" style="padding:6px 10px;font-size:14px;">+</button>
+      </div>
+      <select id="p-status" style="width:110px;">
+        <option value="final">ফাইনাল</option>
+        <option value="draft">ড্রাফট</option>
+      </select>
+    </div>
+
+    <!-- Inline Item Entry Row -->
+    <div class="item-entry-row">
+      <div style="display:flex;gap:4px;width:150px;">
+        <select class="ie-cat" id="ie-cat" style="flex:1;"><option value="">ক্যাটাগরি</option></select>
+        <button class="btn btn-primary btn-sm" onclick="openModal('cat-modal')" title="নতুন ক্যাটাগরি" style="padding:6px 10px;font-size:14px;border-radius:6px;">+</button>
+      </div>
+      <input type="text" class="ie-desc" id="ie-desc" placeholder="আইটেমের নাম / বিবরণ *">
+      <button class="ie-picker-btn" onclick="openItemPicker()" title="আইটেম তালিকা থেকে বাছাই করুন" type="button">
+        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="2" rx="1"/><rect x="3" y="11" width="18" height="2" rx="1"/><rect x="3" y="17" width="18" height="2" rx="1"/></svg>
+      </button>
+      <input type="text" class="ie-size" id="ie-size" placeholder="সাইজ">
+      <div style="display:flex;gap:4px;width:90px;">
+        <select class="ie-unit" id="ie-unit" style="flex:1;"><option value="পিস">পিস</option></select>
+        <button class="btn btn-primary btn-sm" onclick="openModal('unit-modal')" title="নতুন ইউনিট" style="padding:6px 6px;font-size:14px;border-radius:6px;">+</button>
+      </div>
+      <input type="number" class="ie-qty" id="ie-qty" placeholder="Qty" value="1" min="1">
+      <input type="number" class="ie-buy" id="ie-buy" placeholder="ক্রয়" step="any">
+      <input type="number" class="ie-sale" id="ie-sale" placeholder="বিক্রয়" step="any">
+      <div style="display:flex;gap:4px;width:120px;">
+        <button class="btn btn-outline btn-sm" onclick="generateBarcode()" title="অটো জেনারেট বারকোড" style="padding:6px;border-radius:6px;background:#fff;">🔣</button>
+        <input type="text" class="ie-barcode" id="ie-barcode" placeholder="বারকোড" style="flex:1;width:100%;">
+      </div>
+      <button class="ie-add-btn" onclick="addInlineItem()" title="আইটেম যোগ করুন">➕</button>
+      <button class="ie-clear-btn" onclick="clearInlineEntry()" title="ক্লিয়ার">🗑️</button>
+    </div>
+
+    <!-- Cart Table -->
+    <div class="table-scroll" style="margin-bottom:0;">
+      <table class="cart-table">
+        <thead>
+          <tr>
+            <th style="width:40px;">মুছুন</th>
+            <th>বারকোড</th>
+            <th>আইটেম / বিবরণ</th>
+            <th>সাইজ</th>
+            <th style="text-align:right;">পরিমাণ</th>
+            <th style="text-align:right;">ক্রয় মূল্য</th>
+            <th style="text-align:right;">বিক্রয় মূল্য</th>
+            <th style="text-align:right;">সাবটোটাল</th>
+          </tr>
+        </thead>
+        <tbody id="p-cart-body">
+          <tr><td colspan="8" class="empty-row" style="text-align:center;padding:30px;color:#9CA3AF;font-size:14px;">উপরে আইটেমের তথ্য দিয়ে ➕ বাটনে ক্লিক করুন</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Bottom: Save / Reset / Total -->
+    <div class="purchase-bottom">
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-success btn-lg" onclick="savePurchase()" style="font-size:14px;padding:10px 24px;">💾 Save</button>
+        <button class="btn btn-outline" onclick="resetPurchase()" style="font-size:13px;">🔄 Reset</button>
+      </div>
+      <div class="total-box">
+        <span class="total-label">Total:</span>
+        <span class="total-value" id="pc-grand">৳0</span>
+      </div>
+    </div>
+
+    <!-- Payment Section -->
+    <div class="payment-section">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <label>ডেলিভারি:</label>
+        <input type="number" id="pc-delivery" value="0" style="width:80px;text-align:right;" oninput="calcPurchTotals()">
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <label>পেমেন্ট:</label>
+        <input type="number" id="pc-paid" value="0" style="width:90px;text-align:right;" oninput="calcPurchTotals()">
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <label>অ্যাকাউন্ট:</label>
+        <select id="pc-account"><option>নগদ</option><option>বিকাশ</option><option>ব্যাংক</option></select>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <label>বাকি:</label>
+        <span class="due-val" id="pc-due">৳0</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- Add Supplier Modal -->
+<div class="modal-overlay" id="supp-modal">
+<div class="modal" style="max-width:420px;">
+  <div class="modal-header"><h3>➕ নতুন সাপ্লাইয়ার</h3><button class="modal-close" onclick="closeModal('supp-modal')">✕</button></div>
+  <div class="modal-body">
+    <div class="form-group mb-1"><label class="form-label">নাম *</label><input type="text" class="form-control" id="ns-name" placeholder="সাপ্লাইয়ারের নাম"></div>
+    <div class="form-group mb-1"><label class="form-label">মোবাইল</label><input type="text" class="form-control" id="ns-mobile" placeholder="01XXXXXXXXX"></div>
+    <div class="form-group mb-1"><label class="form-label">প্রতিষ্ঠান</label><input type="text" class="form-control" id="ns-company" placeholder="প্রতিষ্ঠানের নাম"></div>
+    <div class="form-group"><label class="form-label">ঠিকানা</label><input type="text" class="form-control" id="ns-addr" placeholder="ঠিকানা"></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-outline btn-sm" onclick="closeModal('supp-modal')">বন্ধ</button><button class="btn btn-primary btn-sm" onclick="addSupplier()">💾 সেভ</button></div>
+</div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal-overlay" id="cat-modal">
+<div class="modal" style="max-width:350px;">
+  <div class="modal-header"><h3>➕ নতুন ক্যাটাগরি</h3><button class="modal-close" onclick="closeModal('cat-modal')">✕</button></div>
+  <div class="modal-body">
+    <div class="form-group"><label class="form-label">ক্যাটাগরির নাম *</label><input type="text" class="form-control" id="nc-name" placeholder="যেমন: ইলেকট্রনিক্স"></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-outline btn-sm" onclick="closeModal('cat-modal')">বন্ধ</button><button class="btn btn-primary btn-sm" onclick="addCategory()">💾 সেভ</button></div>
+</div>
+</div>
+
+<!-- Add Unit Modal -->
+<div class="modal-overlay" id="unit-modal">
+<div class="modal" style="max-width:350px;">
+  <div class="modal-header"><h3>➕ নতুন ইউনিট</h3><button class="modal-close" onclick="closeModal('unit-modal')">✕</button></div>
+  <div class="modal-body">
+    <div class="form-group"><label class="form-label">ইউনিটের নাম *</label><input type="text" class="form-control" id="nu-name" placeholder="যেমন: পিস, কেজি"></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-outline btn-sm" onclick="closeModal('unit-modal')">বন্ধ</button><button class="btn btn-primary btn-sm" onclick="addUnit()">💾 সেভ</button></div>
+</div>
+</div>
+
+<!-- Item Picker Overlay -->
+<div class="item-picker-overlay" id="item-picker-overlay" onclick="if(event.target===this)closeItemPicker()">
+  <div class="item-picker-panel">
+    <div class="item-picker-header">
+      <h3>📋 আইটেম বাছাই করুন</h3>
+      <button class="item-picker-close" onclick="closeItemPicker()">✕</button>
+    </div>
+    <div class="item-picker-search">
+      <input type="text" id="ip-search" placeholder="🔍 আইটেম সার্চ করুন..." oninput="renderItemPicker()">
+    </div>
+    <div class="item-picker-list" id="ip-list"></div>
+    <a href="items.html" class="ip-add-link">➕ আইটেম পেজে যান (নতুন আইটেম যোগ করুন)</a>
+  </div>
+</div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-init.js?v=3"></script>
+  <script src="app.js?v=3"></script>
+<script>
+initPage('purchase', 'ক্রয় / Purchase');
+
+let pCart = [];
+document.getElementById('p-date').value = todayStr();
+document.getElementById('p-inv-no').textContent = '#' + Store.peekPurchInv();
+
+// Load category dropdown for inline entry
+function loadInlineSelects() {
+  const cats = Store.categories();
+  document.getElementById('ie-cat').innerHTML = '<option value="">ক্যাটাগরি</option>' + cats.map(c => `<option>${c}</option>`).join('');
+  const units = Store.units();
+  document.getElementById('ie-unit').innerHTML = units.map(u => `<option value="${u}">${u}</option>`).join('');
+}
+
+function loadSelects() {
+  const supps = Store.suppliers();
+  document.getElementById('p-supp').innerHTML = '<option value="">সাপ্লাইয়ার সিলেক্ট...</option><option value="N/A">প্রযোজ্য নয় (N/A)</option>' + supps.map(s => `<option value="${s.id}">${s.name}${s.company?' — '+s.company:''}</option>`).join('');
+}
+
+function addSupplier() {
+  const name = document.getElementById('ns-name').value.trim();
+  if (!name) { showToast('নাম দিন!','error'); return; }
+  const supps = Store.suppliers();
+  supps.push({ id: uid(), name, mobile: document.getElementById('ns-mobile').value.trim(), company: document.getElementById('ns-company').value.trim(), address: document.getElementById('ns-addr').value.trim(), due: 0 });
+  Store.saveSupp(supps);
+  closeModal('supp-modal');
+  ['ns-name','ns-mobile','ns-company','ns-addr'].forEach(x => document.getElementById(x).value = '');
+  showToast('সাপ্লাইয়ার যোগ হয়েছে!');
+  loadSelects();
+}
+
+function addCategory() {
+  const name = document.getElementById('nc-name').value.trim();
+  if (!name) { showToast('ক্যাটাগরির নাম দিন!','error'); return; }
+  const cats = Store.categories();
+  if (cats.includes(name)) { showToast('এই ক্যাটাগরি ইতিমধ্যে আছে!','error'); return; }
+  cats.push(name);
+  Store.saveCategories(cats);
+  closeModal('cat-modal');
+  document.getElementById('nc-name').value = '';
+  showToast('ক্যাটাগরি যোগ হয়েছে!');
+  loadInlineSelects();
+  // Auto select the new category
+  document.getElementById('ie-cat').value = name;
+}
+
+function addUnit() {
+  const name = document.getElementById('nu-name').value.trim();
+  if (!name) { showToast('ইউনিটের নাম দিন!','error'); return; }
+  const units = Store.units();
+  if (units.includes(name)) { showToast('এই ইউনিট ইতিমধ্যে আছে!','error'); return; }
+  units.push(name);
+  Store.saveUnits(units);
+  closeModal('unit-modal');
+  document.getElementById('nu-name').value = '';
+  showToast('ইউনিট যোগ হয়েছে!');
+  loadInlineSelects();
+  // Auto select the new unit
+  document.getElementById('ie-unit').value = name;
+}
+
+function generateBarcode() {
+  document.getElementById('ie-barcode').value = Store.nextBarcode();
+}
+
+// ===== INLINE ITEM ADD =====
+function addInlineItem() {
+  const desc = document.getElementById('ie-desc').value.trim();
+  if (!desc) { showToast('আইটেমের নাম / বিবরণ দিন!','error'); document.getElementById('ie-desc').focus(); return; }
+
+  const category = document.getElementById('ie-cat').value;
+  const size = document.getElementById('ie-size').value.trim();
+  const unit = document.getElementById('ie-unit').value || 'পিস';
+  const qty = parseInt(document.getElementById('ie-qty').value) || 1;
+  const buyPrice = parseFloat(document.getElementById('ie-buy').value) || 0;
+  const salePrice = parseFloat(document.getElementById('ie-sale').value) || 0;
+  let barcode = document.getElementById('ie-barcode').value.trim();
+
+  // Auto-generate barcode if empty
+  if (!barcode) barcode = Store.nextBarcode();
+
+  // Check if item already exists by name (case insensitive)
+  const items = Store.items();
+  let existingItem = items.find(i => (i.name||'').toLowerCase() === desc.toLowerCase());
+
+  let itemId;
+  if (existingItem) {
+    // Update existing item's prices
+    itemId = existingItem.id;
+    if (buyPrice > 0) existingItem.buyPrice = buyPrice;
+    if (salePrice > 0) existingItem.salePrice = salePrice;
+    if (barcode) existingItem.barcode = barcode;
+    if (size) existingItem.size = size;
+    existingItem.unit = unit;
+    Store.saveItems(items);
+  } else {
+    // Create new item automatically
+    const newItem = {
+      id: uid(),
+      name: desc,
+      code: 'ITM-' + String(items.length+1).padStart(4,'0'),
+      barcode: barcode,
+      category: category,
+      brand: '',
+      unit: unit,
+      size: size,
+      buyPrice: buyPrice,
+      salePrice: salePrice,
+      wholesalePrice: 0,
+      stock: 0,
+      alertQty: 5,
+      createdAt: new Date().toISOString()
+    };
+    items.push(newItem);
+    Store.saveItems(items);
+    itemId = newItem.id;
+  }
+
+  // Check if already in cart
+  const existingCartItem = pCart.find(c => c.itemId === itemId);
+  if (existingCartItem) {
+    existingCartItem.qty += qty;
+    if (buyPrice > 0) existingCartItem.price = buyPrice;
+    if (salePrice > 0) existingCartItem.salePrice = salePrice;
+  } else {
+    pCart.push({
+      itemId: itemId,
+      name: desc,
+      barcode: barcode,
+      size: size,
+      price: buyPrice,
+      salePrice: salePrice,
+      qty: qty,
+      disc: 0
+    });
+  }
+
+  renderPCart();
+  clearInlineEntry();
+  showToast(desc + ' যোগ হয়েছে!', 'success');
+  document.getElementById('ie-desc').focus();
+}
+
+function clearInlineEntry() {
+  document.getElementById('ie-desc').value = '';
+  document.getElementById('ie-size').value = '';
+  const units = Store.units();
+  document.getElementById('ie-unit').value = units.length > 0 ? units[0] : 'পিস';
+  document.getElementById('ie-qty').value = 1;
+  document.getElementById('ie-buy').value = '';
+  document.getElementById('ie-sale').value = '';
+  document.getElementById('ie-barcode').value = '';
+  document.getElementById('ie-cat').value = '';
+}
+
+// Handle Enter key in inline fields
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const activeEl = document.activeElement;
+    if (activeEl && activeEl.closest('.item-entry-row')) {
+      e.preventDefault();
+      addInlineItem();
+    }
+  }
+});
+
+// ===== ITEM PICKER =====
+function openItemPicker() {
+  document.getElementById('item-picker-overlay').classList.add('active');
+  document.getElementById('ip-search').value = '';
+  renderItemPicker();
+  setTimeout(() => document.getElementById('ip-search').focus(), 150);
+}
+
+function closeItemPicker() {
+  document.getElementById('item-picker-overlay').classList.remove('active');
+}
+
+function renderItemPicker() {
+  const items = Store.items();
+  const search = (document.getElementById('ip-search').value || '').toLowerCase();
+  const filtered = items.filter(i => {
+    if (!search) return true;
+    return (i.name||'').toLowerCase().includes(search)
+      || (i.barcode||'').includes(search)
+      || (i.code||'').toLowerCase().includes(search)
+      || (i.category||'').toLowerCase().includes(search);
+  });
+
+  const listEl = document.getElementById('ip-list');
+  if (filtered.length === 0) {
+    listEl.innerHTML = '<div class="ip-empty">😕 কোনো আইটেম পাওয়া যায়নি</div>';
+    return;
+  }
+
+  listEl.innerHTML = filtered.map((item, idx) => {
+    const catLabel = item.category ? item.category : '';
+    const sizeLabel = item.size ? ' | সাইজ: ' + item.size : '';
+    const stockLabel = ' | মজুদ: ' + (item.stock||0);
+    return `<div class="ip-item" onclick="selectPickerItem('${item.id}')">
+      <div class="ip-item-icon">📦</div>
+      <div class="ip-item-info">
+        <div class="ip-item-name">${item.name}</div>
+        <div class="ip-item-meta">${catLabel}${sizeLabel}${stockLabel}</div>
+      </div>
+      <div class="ip-item-price">
+        <div class="ip-item-buy">ক্রয়: ${fmt(item.buyPrice||0)}</div>
+        <div class="ip-item-sale">বিক্রয়: ${fmt(item.salePrice||0)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectPickerItem(itemId) {
+  const items = Store.items();
+  const item = items.find(i => i.id === itemId);
+  if (!item) return;
+
+  // Auto-fill all inline entry fields
+  document.getElementById('ie-desc').value = item.name || '';
+  document.getElementById('ie-size').value = item.size || '';
+  document.getElementById('ie-buy').value = item.buyPrice || '';
+  document.getElementById('ie-sale').value = item.salePrice || '';
+  document.getElementById('ie-barcode').value = item.barcode || '';
+  if (item.category) document.getElementById('ie-cat').value = item.category;
+  if (item.unit) document.getElementById('ie-unit').value = item.unit;
+
+  closeItemPicker();
+  showToast(item.name + ' সিলেক্ট হয়েছে!', 'success');
+  document.getElementById('ie-qty').focus();
+}
+
+// ===== CART =====
+function renderPCart() {
+  const tbody = document.getElementById('p-cart-body');
+  if (!pCart.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-row" style="text-align:center;padding:30px;color:#9CA3AF;font-size:14px;">উপরে আইটেমের তথ্য দিয়ে ➕ বাটনে ক্লিক করুন</td></tr>';
+    calcPurchTotals();
+    return;
+  }
+  tbody.innerHTML = pCart.map((c,i) => {
+    const sub = c.price * c.qty;
+    return `<tr>
+      <td><button class="del-btn" onclick="pCart.splice(${i},1);renderPCart();">✕</button></td>
+      <td style="font-size:12px;color:#6B7280;">${c.barcode||'-'}</td>
+      <td><span style="font-weight:600;">${c.name}</span></td>
+      <td style="color:#6B7280;">${c.size||'-'}</td>
+      <td style="text-align:right;"><input type="number" class="edit-input" value="${c.qty}" min="1" onchange="pCart[${i}].qty=parseInt(this.value)||1;renderPCart();" style="width:50px;"></td>
+      <td style="text-align:right;"><input type="number" class="edit-input" value="${c.price}" onchange="pCart[${i}].price=parseFloat(this.value)||0;renderPCart();" style="width:65px;"></td>
+      <td style="text-align:right;"><input type="number" class="edit-input" value="${c.salePrice||0}" onchange="pCart[${i}].salePrice=parseFloat(this.value)||0;renderPCart();" style="width:65px;"></td>
+      <td style="text-align:right;font-weight:700;color:#1E293B;">${fmt(sub)}</td>
+    </tr>`;
+  }).join('');
+  calcPurchTotals();
+}
+
+function calcPurchTotals() {
+  const sub = pCart.reduce((s,c) => s + (c.price*c.qty), 0);
+  const delivery = parseFloat(document.getElementById('pc-delivery').value)||0;
+  const grand = sub + delivery;
+  const paid = parseFloat(document.getElementById('pc-paid').value)||0;
+  document.getElementById('pc-grand').textContent = '৳' + Math.round(grand).toLocaleString('en-IN');
+  document.getElementById('pc-due').textContent = '৳' + Math.round(grand - paid).toLocaleString('en-IN');
+}
+
+function savePurchase() {
+  if (!pCart.length) { showToast('আইটেম যোগ করুন!','error'); return; }
+  const suppId = document.getElementById('p-supp').value;
+  if (!suppId) { showToast('সাপ্লাইয়ার সিলেক্ট করুন!','error'); return; }
+  const supps = Store.suppliers(); const supp = supps.find(s=>s.id===suppId);
+  const supplierName = suppId === 'N/A' ? 'N/A' : (supp ? supp.name : '');
+  const sub = pCart.reduce((s,c) => s + (c.price*c.qty), 0);
+  const delivery = parseFloat(document.getElementById('pc-delivery').value)||0;
+  const grand = sub + delivery;
+  const paid = parseFloat(document.getElementById('pc-paid').value)||0;
+  const due = grand - paid;
+  const invNo = Store.nextPurchInv();
+  const purchase = {
+    id: uid(), invoiceNo: invNo,
+    date: document.getElementById('p-date').value,
+    supplierId: suppId, supplierName: supplierName,
+    status: document.getElementById('p-status').value,
+    items: pCart.map(c=>({...c})),
+    subtotal: sub, deliveryCharge: delivery, grandTotal: grand,
+    paid, due, account: document.getElementById('pc-account').value,
+    createdAt: new Date().toISOString()
+  };
+  const purchases = Store.purchases(); purchases.push(purchase); Store.savePurch(purchases);
+
+  // Update stock, prices, and barcode for each item
+  const items = Store.items();
+  pCart.forEach(c => {
+    const it = items.find(i=>i.id===c.itemId);
+    if(it) {
+      it.stock = (it.stock||0) + c.qty;
+      it.buyPrice = c.price;
+      it.salePrice = c.salePrice;
+      if (c.barcode) it.barcode = c.barcode;
+      if (c.size) it.size = c.size;
+    }
+  });
+  Store.saveItems(items);
+
+  // Update supplier due
+  if (supp && due > 0) { supp.due = (supp.due||0) + due; Store.saveSupp(supps); }
+
+  showToast('ক্রয় সফলভাবে সেভ হয়েছে!');
+  resetPurchase();
+}
+
+function resetPurchase() {
+  pCart = [];
+  document.getElementById('pc-delivery').value = 0;
+  document.getElementById('pc-paid').value = 0;
+  document.getElementById('p-supp').value = '';
+  document.getElementById('p-status').value = 'final';
+  clearInlineEntry();
+  renderPCart();
+  document.getElementById('p-inv-no').textContent = '#' + Store.peekPurchInv();
+}
+
+loadSelects();
+loadInlineSelects();
+renderPCart();
+</script>
+</body>
+</html>
