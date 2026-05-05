@@ -36,12 +36,125 @@
     border-color: #22C55E; outline: none; box-shadow: 0 0 0 2px rgba(34,197,94,0.15);
   }
   .item-entry-row .ie-cat { width: 130px; }
-  .item-entry-row .ie-desc { flex: 1; min-width: 160px; }
+  .item-entry-row .ie-desc { flex: 1; min-width: 120px; }
   .item-entry-row .ie-size { width: 70px; }
   .item-entry-row .ie-qty { width: 55px; text-align: center; }
   .item-entry-row .ie-buy { width: 75px; text-align: right; }
   .item-entry-row .ie-sale { width: 75px; text-align: right; }
   .item-entry-row .ie-barcode { width: 100px; }
+
+  /* Item Picker Hamburger Button */
+  .ie-picker-btn {
+    background: linear-gradient(135deg, #6366F1, #818CF8);
+    color: #fff; border: none; border-radius: 8px;
+    padding: 8px 10px; font-size: 16px; cursor: pointer;
+    transition: all .2s; display: flex; align-items: center;
+    justify-content: center; min-width: 38px; height: 38px;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.25);
+  }
+  .ie-picker-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 14px rgba(99,102,241,0.4);
+  }
+  .ie-picker-btn svg {
+    width: 20px; height: 20px; fill: #fff;
+  }
+
+  /* Item Picker Dropdown Panel */
+  .item-picker-overlay {
+    display: none; position: fixed; inset: 0; z-index: 9998;
+    background: rgba(0,0,0,0.35); backdrop-filter: blur(3px);
+    animation: ipFadeIn .2s ease;
+  }
+  .item-picker-overlay.active { display: flex; align-items: center; justify-content: center; }
+  @keyframes ipFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes ipSlideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .item-picker-panel {
+    background: #fff; border-radius: 14px; width: 94%; max-width: 520px;
+    max-height: 75vh; display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25); animation: ipSlideUp .25s ease;
+    overflow: hidden;
+  }
+  [data-theme="dark"] .item-picker-panel {
+    background: #1E293B; border: 1px solid #334155;
+  }
+  .item-picker-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid #E2E8F0;
+    background: linear-gradient(135deg, #6366F1, #818CF8);
+    color: #fff;
+  }
+  .item-picker-header h3 { margin: 0; font-size: 15px; font-weight: 700; }
+  .item-picker-close {
+    background: rgba(255,255,255,0.2); border: none; color: #fff;
+    width: 30px; height: 30px; border-radius: 50%; font-size: 16px;
+    cursor: pointer; transition: all .2s; display: flex;
+    align-items: center; justify-content: center;
+  }
+  .item-picker-close:hover { background: rgba(255,255,255,0.35); }
+
+  .item-picker-search {
+    padding: 12px 16px; border-bottom: 1px solid #F1F5F9;
+  }
+  .item-picker-search input {
+    width: 100%; padding: 10px 14px; border: 2px solid #E2E8F0;
+    border-radius: 8px; font-size: 14px; outline: none;
+    background: #F8FAFC; color: #1E293B; transition: border-color .2s;
+  }
+  [data-theme="dark"] .item-picker-search input {
+    background: #0F172A; border-color: #334155; color: #E2E8F0;
+  }
+  .item-picker-search input:focus { border-color: #6366F1; }
+
+  .item-picker-list {
+    flex: 1; overflow-y: auto; padding: 6px 0;
+  }
+  .item-picker-list::-webkit-scrollbar { width: 6px; }
+  .item-picker-list::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+
+  .ip-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 18px; cursor: pointer; transition: all .15s;
+    border-bottom: 1px solid #F8FAFC;
+  }
+  .ip-item:hover { background: #EEF2FF; }
+  [data-theme="dark"] .ip-item:hover { background: #334155; }
+  .ip-item-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, #E0E7FF, #C7D2FE);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  [data-theme="dark"] .ip-item-icon { background: linear-gradient(135deg, #312E81, #3730A3); }
+  .ip-item-info { flex: 1; min-width: 0; }
+  .ip-item-name {
+    font-weight: 600; font-size: 13px; color: #1E293B;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  [data-theme="dark"] .ip-item-name { color: #E2E8F0; }
+  .ip-item-meta {
+    font-size: 11px; color: #9CA3AF; margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ip-item-price {
+    text-align: right; flex-shrink: 0;
+  }
+  .ip-item-buy { font-size: 12px; color: #6B7280; }
+  .ip-item-sale { font-size: 13px; font-weight: 700; color: #16A34A; }
+
+  .ip-empty {
+    padding: 30px 18px; text-align: center; color: #9CA3AF; font-size: 14px;
+  }
+  .ip-add-link {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 12px 18px; border-top: 1px solid #E2E8F0;
+    color: #6366F1; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .15s; text-decoration: none;
+  }
+  .ip-add-link:hover { background: #EEF2FF; }
+  [data-theme="dark"] .ip-add-link { border-top-color: #334155; color: #818CF8; }
+  [data-theme="dark"] .ip-add-link:hover { background: #334155; }
   .ie-add-btn {
     background: linear-gradient(135deg, #22C55E, #16A34A); color: #fff;
     border: none; border-radius: 8px; padding: 8px 14px; font-size: 16px;
@@ -150,6 +263,9 @@
         <button class="btn btn-primary btn-sm" onclick="openModal('cat-modal')" title="নতুন ক্যাটাগরি" style="padding:6px 10px;font-size:14px;border-radius:6px;">+</button>
       </div>
       <input type="text" class="ie-desc" id="ie-desc" placeholder="আইটেমের নাম / বিবরণ *">
+      <button class="ie-picker-btn" onclick="openItemPicker()" title="আইটেম তালিকা থেকে বাছাই করুন" type="button">
+        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="2" rx="1"/><rect x="3" y="11" width="18" height="2" rx="1"/><rect x="3" y="17" width="18" height="2" rx="1"/></svg>
+      </button>
       <input type="text" class="ie-size" id="ie-size" placeholder="সাইজ">
       <div style="display:flex;gap:4px;width:90px;">
         <select class="ie-unit" id="ie-unit" style="flex:1;"><option value="পিস">পিস</option></select>
@@ -257,6 +373,21 @@
   </div>
   <div class="modal-footer"><button class="btn btn-outline btn-sm" onclick="closeModal('unit-modal')">বন্ধ</button><button class="btn btn-primary btn-sm" onclick="addUnit()">💾 সেভ</button></div>
 </div>
+</div>
+
+<!-- Item Picker Overlay -->
+<div class="item-picker-overlay" id="item-picker-overlay" onclick="if(event.target===this)closeItemPicker()">
+  <div class="item-picker-panel">
+    <div class="item-picker-header">
+      <h3>📋 আইটেম বাছাই করুন</h3>
+      <button class="item-picker-close" onclick="closeItemPicker()">✕</button>
+    </div>
+    <div class="item-picker-search">
+      <input type="text" id="ip-search" placeholder="🔍 আইটেম সার্চ করুন..." oninput="renderItemPicker()">
+    </div>
+    <div class="item-picker-list" id="ip-list"></div>
+    <a href="items.html" class="ip-add-link">➕ আইটেম পেজে যান (নতুন আইটেম যোগ করুন)</a>
+  </div>
 </div>
 
   <!-- Firebase SDK -->
@@ -430,6 +561,72 @@ document.addEventListener('keydown', function(e) {
     }
   }
 });
+
+// ===== ITEM PICKER =====
+function openItemPicker() {
+  document.getElementById('item-picker-overlay').classList.add('active');
+  document.getElementById('ip-search').value = '';
+  renderItemPicker();
+  setTimeout(() => document.getElementById('ip-search').focus(), 150);
+}
+
+function closeItemPicker() {
+  document.getElementById('item-picker-overlay').classList.remove('active');
+}
+
+function renderItemPicker() {
+  const items = Store.items();
+  const search = (document.getElementById('ip-search').value || '').toLowerCase();
+  const filtered = items.filter(i => {
+    if (!search) return true;
+    return (i.name||'').toLowerCase().includes(search)
+      || (i.barcode||'').includes(search)
+      || (i.code||'').toLowerCase().includes(search)
+      || (i.category||'').toLowerCase().includes(search);
+  });
+
+  const listEl = document.getElementById('ip-list');
+  if (filtered.length === 0) {
+    listEl.innerHTML = '<div class="ip-empty">😕 কোনো আইটেম পাওয়া যায়নি</div>';
+    return;
+  }
+
+  listEl.innerHTML = filtered.map((item, idx) => {
+    const catLabel = item.category ? item.category : '';
+    const sizeLabel = item.size ? ' | সাইজ: ' + item.size : '';
+    const stockLabel = ' | মজুদ: ' + (item.stock||0);
+    return `<div class="ip-item" onclick="selectPickerItem('${item.id}')">
+      <div class="ip-item-icon">📦</div>
+      <div class="ip-item-info">
+        <div class="ip-item-name">${item.name}</div>
+        <div class="ip-item-meta">${catLabel}${sizeLabel}${stockLabel}</div>
+      </div>
+      <div class="ip-item-price">
+        <div class="ip-item-buy">ক্রয়: ${fmt(item.buyPrice||0)}</div>
+        <div class="ip-item-sale">বিক্রয়: ${fmt(item.salePrice||0)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectPickerItem(itemId) {
+  const items = Store.items();
+  const item = items.find(i => i.id === itemId);
+  if (!item) return;
+
+  // Auto-fill all inline entry fields
+  document.getElementById('ie-desc').value = item.name || '';
+  document.getElementById('ie-size').value = item.size || '';
+  document.getElementById('ie-buy').value = item.buyPrice || '';
+  document.getElementById('ie-sale').value = item.salePrice || '';
+  document.getElementById('ie-barcode').value = item.barcode || '';
+  if (item.category) document.getElementById('ie-cat').value = item.category;
+  if (item.unit) document.getElementById('ie-unit').value = item.unit;
+
+  closeItemPicker();
+  showToast(item.name + ' সিলেক্ট হয়েছে!', 'success');
+  document.getElementById('ie-qty').focus();
+}
 
 // ===== CART =====
 function renderPCart() {
