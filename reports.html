@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>DSBPOS — রিপোর্ট</title>
+<title>PHOTOVIEW — রিপোর্ট</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,7 +12,8 @@
 
   <!-- Tab Nav -->
   <div style="display:flex;gap:4px;margin-bottom:16px;background:#F1F5F9;border-radius:10px;padding:4px;">
-    <button onclick="switchTab('summary')" id="tab-summary" class="tab-btn active-tab">📊 সামারি রিপোর্ট</button>
+    <button onclick="switchTab('summary')" id="tab-summary" class="tab-btn active-tab">📊 সামারি</button>
+    <button onclick="switchTab('salessummary')" id="tab-salessummary" class="tab-btn">📈 সেলস সামারি</button>
     <button onclick="switchTab('purchsummary')" id="tab-purchsummary" class="tab-btn">🛍️ ক্রয় সামারি</button>
     <button onclick="switchTab('party')"   id="tab-party"   class="tab-btn">🤝 পার্টি লেজার</button>
   </div>
@@ -173,6 +174,50 @@
 
   </div><!-- end party tab -->
 
+
+  <!-- ========== SALES SUMMARY TAB ========== -->
+  <div class="tab-section" id="sec-salessummary">
+    <!-- Sales Summary Stats -->
+    <div class="stats-grid">
+      <div class="stat-card green"><div class="stat-label">মোট বিক্রয়</div><div class="stat-value text-success" id="ss-total">৳0</div></div>
+      <div class="stat-card blue"><div class="stat-label">মোট আদায়</div><div class="stat-value text-primary" id="ss-paid">৳0</div></div>
+      <div class="stat-card red"><div class="stat-label">মোট বকেয়া</div><div class="stat-value text-danger" id="ss-due">৳0</div></div>
+      <div class="stat-card orange"><div class="stat-label">মোট ইনভয়েস</div><div class="stat-value text-warning" id="ss-inv">0</div></div>
+      <div class="stat-card"><div class="stat-label">মোট পিস</div><div class="stat-value" id="ss-qty">0</div></div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar" style="flex-wrap:wrap;">
+      <select class="form-control" id="ss-customer" onchange="renderSalesSummary()" style="min-width:200px;">
+        <option value="">— সকল কাস্টমার —</option>
+      </select>
+      <input type="date" class="form-control" id="ss-from" onchange="renderSalesSummary()">
+      <span>→</span>
+      <input type="date" class="form-control" id="ss-to" onchange="renderSalesSummary()">
+      <select class="form-control" id="ss-view" onchange="renderSalesSummary()" style="min-width:160px;">
+        <option value="customer">কাস্টমার অনুযায়ী</option>
+        <option value="item">আইটেম অনুযায়ী (সামারি)</option>
+        <option value="item-detail">আইটেম বিস্তারিত (সময়সহ)</option>
+        <option value="category">ক্যাটাগরি অনুযায়ী</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('ss-from').value='';document.getElementById('ss-to').value='';document.getElementById('ss-customer').value='';renderSalesSummary();">ক্লিয়ার</button>
+    </div>
+
+    <!-- Sales Summary Table -->
+    <div class="table-wrap" style="margin-top:0;" id="ss-table-wrap">
+      <div class="table-header">
+        <h3 id="ss-table-title">📈 সেলস সামারি</h3>
+        <span style="font-size:12px;color:#94A3B8;" id="ss-row-count"></span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead id="ss-thead"></thead>
+          <tbody id="ss-body"><tr><td colspan="10" class="empty-row">ডেটা লোড হচ্ছে...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- end salessummary tab -->
+
   <!-- ========== PURCHASE SUMMARY TAB ========== -->
   <div class="tab-section" id="sec-purchsummary">
 
@@ -232,6 +277,8 @@ window._pageInit = function() {
   renderPartyLedger();
   loadPurchSummarySuppliers();
   renderPurchSummary();
+  loadSalesSummaryCustomers();
+  renderSalesSummary();
 };
 initPage('reports','রিপোর্ট');
 
@@ -490,6 +537,167 @@ function renderSummaryTable(purchases) {
     <td class="text-right" style="color:#22C55E;">${fmt(gtPaid)}</td>
     <td class="text-right" style="color:#EF4444;">${fmt(gtDue)}</td>
   </tr>`;
+}
+
+
+// ====== SALES SUMMARY TAB ======
+function loadSalesSummaryCustomers() {
+  const sel = document.getElementById('ss-customer');
+  const custs = Store.customers();
+  sel.innerHTML = '<option value="">— সকল কাস্টমার —</option>'
+    + custs.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
+    + '<option value="N/A">Cash (N/A)</option>';
+}
+
+function renderSalesSummary() {
+  const selCust = document.getElementById('ss-customer').value;
+  const from    = document.getElementById('ss-from').value;
+  const to      = document.getElementById('ss-to').value;
+  const view    = document.getElementById('ss-view').value;
+  const inRange = d => { if(from && d < from) return false; if(to && d > to) return false; return true; };
+
+  let sales = Store.sales().filter(s => inRange(s.date));
+  if (selCust) sales = sales.filter(s => {
+    if (selCust === 'N/A') return s.customerId === 'N/A' || !s.customerId;
+    return s.customerId === selCust;
+  });
+
+  const allItems = Store.items();
+
+  let gT=0,gP=0,gD=0,gQ=0;
+  sales.forEach(s => {
+    gT += s.grandTotal||0; gP += s.paid||0; gD += s.due||0;
+    (s.items||[]).forEach(i => { gQ += i.qty||0; });
+  });
+  document.getElementById('ss-total').textContent = fmt(gT);
+  document.getElementById('ss-paid').textContent  = fmt(gP);
+  document.getElementById('ss-due').textContent   = fmt(gD);
+  document.getElementById('ss-inv').textContent   = sales.length;
+  document.getElementById('ss-qty').textContent   = gQ;
+
+  const thead = document.getElementById('ss-thead');
+  const tbody = document.getElementById('ss-body');
+
+  if (view === 'customer') renderSSByCustomer(sales, thead, tbody);
+  else if (view === 'item') renderSSByItem(sales, allItems, thead, tbody);
+  else if (view === 'category') renderSSByCategory(sales, allItems, thead, tbody);
+  else if (view === 'item-detail') renderSSByItemDetail(sales, allItems, thead, tbody);
+}
+
+function renderSSByCustomer(sales, thead, tbody) {
+  document.getElementById('ss-table-title').textContent = '📈 কাস্টমার অনুযায়ী সেলস সামারি';
+  thead.innerHTML = '<tr><th>#</th><th>কাস্টমার</th><th class="text-right">ইনভয়েস</th><th class="text-right">সেলস পিস</th><th class="text-right">মোট সেলস</th><th class="text-right">আদায়</th><th class="text-right">বকেয়া</th></tr>';
+  const map = {};
+  sales.forEach(s => {
+    const key = s.customerName || 'Cash';
+    if (!map[key]) map[key] = {inv:0, qty:0, total:0, paid:0, due:0};
+    map[key].inv++;
+    map[key].total += s.grandTotal||0;
+    map[key].paid  += s.paid||0;
+    map[key].due   += s.due||0;
+    (s.items||[]).forEach(i => { map[key].qty += i.qty||0; });
+  });
+  const keys = Object.keys(map).sort();
+  document.getElementById('ss-row-count').textContent = keys.length + ' কাস্টমার';
+  if (!keys.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-row">ডেটা নেই</td></tr>'; return; }
+  let gtT=0,gtP=0,gtD=0,gtQ=0;
+  tbody.innerHTML = keys.map((k,i) => {
+    const r = map[k]; gtT+=r.total; gtP+=r.paid; gtD+=r.due; gtQ+=r.qty;
+    const dueC = r.due>0?'color:#EF4444;font-weight:700;':'color:#22C55E;';
+    return `<tr><td class="text-muted">${i+1}</td><td class="fw-700">${k}</td><td class="text-right">${r.inv}</td><td class="text-right fw-700">${r.qty}</td><td class="text-right fw-700 text-success">${fmt(r.total)}</td><td class="text-right text-primary">${fmt(r.paid)}</td><td class="text-right" style="${dueC}">${r.due>0?fmt(r.due):'—'}</td></tr>`;
+  }).join('');
+  tbody.innerHTML += `<tr style="background:#EFF6FF;border-top:2px solid #BFDBFE;font-weight:700;"><td colspan="3">মোট</td><td class="text-right">${gtQ}</td><td class="text-right text-success">${fmt(gtT)}</td><td class="text-right text-primary">${fmt(gtP)}</td><td class="text-right text-danger">${fmt(gtD)}</td></tr>`;
+}
+
+function renderSSByItem(sales, allItems, thead, tbody) {
+  document.getElementById('ss-table-title').textContent = '📈 আইটেম অনুযায়ী সেলস সামারি';
+  thead.innerHTML = '<tr><th>#</th><th>আইটেম</th><th>বারকোড</th><th>ক্যাটাগরি</th><th class="text-right">সেলস পিস</th><th class="text-right">মোট সেলস</th></tr>';
+  const map = {};
+  sales.forEach(s => {
+    (s.items||[]).forEach(i => {
+      const key = i.itemId;
+      if (!map[key]) {
+        const it = allItems.find(x=>x.id===key);
+        map[key] = {name:i.name||'—', barcode:i.barcode||(it?it.barcode:'')||'-', category:(it&&it.category)||'অন্যান্য', qty:0, total:0};
+      }
+      map[key].qty += i.qty||0;
+      map[key].total += (i.price||0)*(i.qty||0);
+    });
+  });
+  const entries = Object.values(map).sort((a,b) => b.qty-a.qty);
+  document.getElementById('ss-row-count').textContent = entries.length + ' আইটেম';
+  if (!entries.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-row">ডেটা নেই</td></tr>'; return; }
+  let gtQ=0,gtT=0;
+  tbody.innerHTML = entries.map((r,i) => {
+    gtQ+=r.qty; gtT+=r.total;
+    return `<tr><td class="text-muted">${i+1}</td><td class="fw-700">${r.name}</td><td style="font-size:11px;color:#6B7280;">${r.barcode}</td><td style="font-size:11px;color:#64748B;">${r.category}</td><td class="text-right fw-700 text-primary">${r.qty}</td><td class="text-right fw-700 text-success">${fmt(r.total)}</td></tr>`;
+  }).join('');
+  tbody.innerHTML += `<tr style="background:#EFF6FF;border-top:2px solid #BFDBFE;font-weight:700;"><td colspan="4">মোট</td><td class="text-right">${gtQ}</td><td class="text-right text-success">${fmt(gtT)}</td></tr>`;
+}
+
+function renderSSByCategory(sales, allItems, thead, tbody) {
+  document.getElementById('ss-table-title').textContent = '📈 ক্যাটাগরি অনুযায়ী সেলস সামারি';
+  thead.innerHTML = '<tr><th>#</th><th>ক্যাটাগরি</th><th class="text-right">সেলস পিস</th><th class="text-right">মোট সেলস</th></tr>';
+  const map = {};
+  sales.forEach(s => {
+    (s.items||[]).forEach(i => {
+      const it = allItems.find(x=>x.id===i.itemId);
+      const cat = (it&&it.category)||'অন্যান্য';
+      if (!map[cat]) map[cat] = {qty:0, total:0};
+      map[cat].qty += i.qty||0;
+      map[cat].total += (i.price||0)*(i.qty||0);
+    });
+  });
+  const entries = Object.entries(map).sort((a,b) => b[1].qty-a[1].qty);
+  document.getElementById('ss-row-count').textContent = entries.length + ' ক্যাটাগরি';
+  if (!entries.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-row">ডেটা নেই</td></tr>'; return; }
+  let gtQ=0,gtT=0;
+  tbody.innerHTML = entries.map(([cat,r],i) => {
+    gtQ+=r.qty; gtT+=r.total;
+    return `<tr><td class="text-muted">${i+1}</td><td class="fw-700">${cat}</td><td class="text-right fw-700 text-primary">${r.qty}</td><td class="text-right fw-700 text-success">${fmt(r.total)}</td></tr>`;
+  }).join('');
+  tbody.innerHTML += `<tr style="background:#EFF6FF;border-top:2px solid #BFDBFE;font-weight:700;"><td colspan="2">মোট</td><td class="text-right">${gtQ}</td><td class="text-right text-success">${fmt(gtT)}</td></tr>`;
+}
+
+function renderSSByItemDetail(sales, allItems, thead, tbody) {
+  document.getElementById('ss-table-title').textContent = '📈 আইটেম বিস্তারিত (সময়সহ)';
+  thead.innerHTML = '<tr><th>তারিখ ও সময়</th><th>ইনভয়েস</th><th>কাস্টমার</th><th>আইটেম</th><th>ক্যাটাগরি</th><th class="text-right">পরিমাণ</th><th class="text-right">মূল্য</th><th class="text-right">মোট</th></tr>';
+  const rows = [];
+  sales.forEach(s => {
+    let dt = s.date;
+    if(s.timestamp) {
+      let t = new Date(s.timestamp);
+      let ds = t.toLocaleDateString('en-GB');
+      let ts = t.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+      dt = ds + ' ' + ts;
+    } else {
+      dt = fmtDate(dt);
+    }
+    (s.items||[]).forEach(i => {
+      const it = allItems.find(x=>x.id===i.itemId);
+      const cat = (it&&it.category)||'অন্যান্য';
+      rows.push({
+        dt: dt,
+        ts: s.timestamp || 0,
+        invoice: s.invoiceNo,
+        customer: s.customerName || 'Cash',
+        name: i.name,
+        category: cat,
+        qty: i.qty||0,
+        price: i.price||0,
+        total: (i.qty||0)*(i.price||0)
+      });
+    });
+  });
+  rows.sort((a,b) => b.ts - a.ts); // sort by newest first
+  document.getElementById('ss-row-count').textContent = rows.length + ' সেলস এন্ট্রি';
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-row">ডেটা নেই</td></tr>'; return; }
+  let gtQ=0,gtT=0;
+  tbody.innerHTML = rows.map((r,i) => {
+    gtQ+=r.qty; gtT+=r.total;
+    return `<tr><td style="font-size:11px;color:#475569;">${r.dt}</td><td style="font-size:12px;color:#64748B;">#${r.invoice}</td><td>${r.customer}</td><td class="fw-600">${r.name}</td><td style="font-size:11px;color:#64748B;">${r.category}</td><td class="text-right fw-700 text-primary">${r.qty}</td><td class="text-right">৳${r.price}</td><td class="text-right fw-700 text-success">৳${Math.round(r.total)}</td></tr>`;
+  }).join('');
+  tbody.innerHTML += `<tr style="background:#EFF6FF;border-top:2px solid #BFDBFE;font-weight:700;"><td colspan="5">মোট</td><td class="text-right">${gtQ}</td><td></td><td class="text-right text-success">৳${Math.round(gtT)}</td></tr>`;
 }
 
 // ====== PURCHASE SUMMARY TAB ======

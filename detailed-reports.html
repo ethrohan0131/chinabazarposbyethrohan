@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DSBPOS — Detailed Reports</title>
+<title>PHOTOVIEW — Detailed Reports</title>
 <link rel="stylesheet" href="styles.css">
 <style>
   .report-container {
@@ -189,7 +189,8 @@
         <div class="rs-group-title" onclick="toggleGroup(this)">▼ Sales Report</div>
         <ul class="rs-list">
           <li onclick="selectReport('sales-invoice', this)">Sales Invoice</li>
-          <li onclick="selectReport('sales-product', this)" style="display:none;">Sales Product</li>
+          <li onclick="selectReport('sales-summary', this)">Sales Summary</li>
+          <li onclick="selectReport('sales-product', this)">Sales Product</li>
         </ul>
       </div>
       <div class="rs-group open">
@@ -233,7 +234,7 @@
       <!-- Printable Area -->
       <div class="print-area" id="print-area">
         <div class="print-header">
-          <div class="print-shop-name" id="ph-shop-name">CHINA BAZAR</div>
+          <div class="print-shop-name" id="ph-shop-name">PHOTOVIEW</div>
           <div class="print-shop-addr" id="ph-shop-addr">Address goes here</div>
           <div class="print-report-title" id="ph-title">REPORT TITLE</div>
           <div class="print-date-range" id="ph-date-range"></div>
@@ -298,6 +299,12 @@ function selectReport(type, el) {
     fgFrom.style.display = 'flex'; fgTo.style.display = 'flex';
   } else if (type === 'sales-invoice') {
     titleEl.textContent = 'Sales Invoice Report';
+    fgFrom.style.display = 'flex'; fgTo.style.display = 'flex';
+  } else if (type === 'sales-summary') {
+    titleEl.textContent = 'Sales Summary Report';
+    fgFrom.style.display = 'flex'; fgTo.style.display = 'flex';
+  } else if (type === 'sales-product') {
+    titleEl.textContent = 'Sales Product Report';
     fgFrom.style.display = 'flex'; fgTo.style.display = 'flex';
   } else if (type === 'overall-stock') {
     titleEl.textContent = 'Overall Stock Report';
@@ -374,6 +381,87 @@ function generateReport() {
         </tr>`;
       }).join('');
       tbody.innerHTML += `<tr><td colspan="4" class="text-right fw-700">Total:</td><td class="text-right fw-700">${Math.round(gt)}</td></tr>`;
+    }
+  } else if (currentReportType === 'sales-summary') {
+    title.textContent = 'DATE WISE SALES SUMMARY';
+    dateRange.textContent = 'DATE: ' + fmtDate(fromD) + ' - ' + fmtDate(toD);
+    thead.innerHTML = '<tr><th>#</th><th>DATE</th><th class="text-right">INVOICES</th><th class="text-right">SOLD QTY</th><th class="text-right">TOTAL AMOUNT</th></tr>';
+    
+    let sales = Store.sales().filter(s => {
+      if(fromD && s.date < fromD) return false;
+      if(toD && s.date > toD) return false;
+      return true;
+    });
+    
+    let dateMap = {};
+    sales.forEach(s => {
+      let d = s.date || 'Unknown';
+      if(!dateMap[d]) dateMap[d] = { inv: 0, qty: 0, total: 0 };
+      dateMap[d].inv++;
+      dateMap[d].total += s.grandTotal || 0;
+      (s.items || []).forEach(i => { dateMap[d].qty += i.qty || 0; });
+    });
+    
+    let dates = Object.keys(dateMap).sort();
+    
+    if(!dates.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No records found</td></tr>';
+    } else {
+      let gt = 0, gqty = 0, ginv = 0;
+      tbody.innerHTML = dates.map((d, i) => {
+        let r = dateMap[d];
+        gt += r.total; gqty += r.qty; ginv += r.inv;
+        return `<tr>
+          <td>${i+1}</td>
+          <td>${fmtDate(d)}</td>
+          <td class="text-right">${r.inv}</td>
+          <td class="text-right">${r.qty}</td>
+          <td class="text-right">${Math.round(r.total)}</td>
+        </tr>`;
+      }).join('');
+      tbody.innerHTML += `<tr><td colspan="2" class="text-right fw-700">Total:</td><td class="text-right fw-700">${ginv}</td><td class="text-right fw-700">${gqty}</td><td class="text-right fw-700">${Math.round(gt)}</td></tr>`;
+    }
+  } else if (currentReportType === 'sales-product') {
+    title.textContent = 'DATE WISE SALES PRODUCT';
+    dateRange.textContent = 'DATE: ' + fmtDate(fromD) + ' - ' + fmtDate(toD);
+    thead.innerHTML = '<tr><th>#</th><th>ITEM NAME</th><th>CATEGORY</th><th class="text-right">SOLD QTY</th><th class="text-right">TOTAL AMOUNT</th></tr>';
+    
+    let sales = Store.sales().filter(s => {
+      if(fromD && s.date < fromD) return false;
+      if(toD && s.date > toD) return false;
+      return true;
+    });
+    
+    let prodMap = {};
+    const allItems = Store.items();
+    sales.forEach(s => {
+      (s.items || []).forEach(i => {
+        if(!prodMap[i.itemId]) {
+          const it = allItems.find(x => x.id === i.itemId);
+          prodMap[i.itemId] = { name: i.name || 'Unknown', category: (it&&it.category)?it.category:'-', qty: 0, total: 0 };
+        }
+        prodMap[i.itemId].qty += i.qty || 0;
+        prodMap[i.itemId].total += (i.price || 0) * (i.qty || 0);
+      });
+    });
+    
+    let itemsArr = Object.values(prodMap).sort((a,b) => b.qty - a.qty);
+    
+    if(!itemsArr.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No records found</td></tr>';
+    } else {
+      let gt = 0, gqty = 0;
+      tbody.innerHTML = itemsArr.map((p, i) => {
+        gt += p.total; gqty += p.qty;
+        return `<tr>
+          <td>${i+1}</td>
+          <td>${p.name}</td>
+          <td>${p.category}</td>
+          <td class="text-right">${p.qty}</td>
+          <td class="text-right">${Math.round(p.total)}</td>
+        </tr>`;
+      }).join('');
+      tbody.innerHTML += `<tr><td colspan="3" class="text-right fw-700">Total:</td><td class="text-right fw-700">${gqty}</td><td class="text-right fw-700">${Math.round(gt)}</td></tr>`;
     }
   } else if (currentReportType === 'overall-stock') {
     title.textContent = 'OVERALL STOCK REPORT';
