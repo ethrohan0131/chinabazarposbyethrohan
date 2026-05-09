@@ -1,4 +1,4 @@
-// CHINA BAZAR POS — Core App v2.2
+// PHOTOVIEW POS — Core App v2.2
 // © ethrohan
 
 const translations = {
@@ -138,10 +138,10 @@ function applyTranslations() {
 }
 
 const DB = {
-  get(k,def=[]){ try{const v=localStorage.getItem('chinabazar_'+k);return v?JSON.parse(v):def;}catch(e){return def;} },
-  set(k,v){ localStorage.setItem('chinabazar_'+k,JSON.stringify(v)); if(window.syncToFirestore) syncToFirestore(k,v); },
-  getOne(k,def){ try{const v=localStorage.getItem('chinabazar_'+k);return v!==null?JSON.parse(v):def;}catch(e){return def;} },
-  setOne(k,v){ localStorage.setItem('chinabazar_'+k,JSON.stringify(v)); if(window.syncToFirestore) syncToFirestore(k,v); },
+  get(k,def=[]){ try{const v=localStorage.getItem('PHOTOVIEW_'+k);return v?JSON.parse(v):def;}catch(e){return def;} },
+  set(k,v){ localStorage.setItem('PHOTOVIEW_'+k,JSON.stringify(v)); if(window.syncToFirestore) syncToFirestore(k,v); },
+  getOne(k,def){ try{const v=localStorage.getItem('PHOTOVIEW_'+k);return v!==null?JSON.parse(v):def;}catch(e){return def;} },
+  setOne(k,v){ localStorage.setItem('PHOTOVIEW_'+k,JSON.stringify(v)); if(window.syncToFirestore) syncToFirestore(k,v); },
 };
 
 const Store = {
@@ -183,8 +183,8 @@ const Store = {
   peekPurchInv() { return DB.getOne('next_purch_inv',50001); },
   nextBarcode()  { const n=DB.getOne('next_barcode',1777900342446); DB.setOne('next_barcode',n+1); return n.toString(); },
   peekBarcode()  { return DB.getOne('next_barcode',1777900342446).toString(); },
-  shopName()     { return DB.getOne('shop_name','CHINA BAZAR'); },
-  shopAddr()     { return DB.getOne('shop_addr','Secure City, Sitakunda, Chattogram'); },
+  shopName()     { return DB.getOne('shop_name','PHOTOVIEW'); },
+  shopAddr()     { return DB.getOne('shop_addr','Address - Abdur Sabur Market, College Road, Sitakunda, Chittagong.'); },
   shopPhone()    { return DB.getOne('shop_phone','01829351313'); },
 };
 
@@ -344,7 +344,7 @@ function initPage(pageName, pageTitle) {
   loader.style.cssText = 'position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:Inter,sans-serif;';
   loader.innerHTML = '<style>@keyframes cb-spin{to{transform:rotate(360deg)}}</style>'
     + '<div style="width:42px;height:42px;border:4px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:cb-spin .7s linear infinite;"></div>'
-    + '<div style="font-size:15px;font-weight:700;color:var(--text);">CHINA BAZAR</div>'
+    + '<div style="font-size:15px;font-weight:700;color:var(--text);">PHOTOVIEW</div>'
     + '<div style="font-size:12px;color:var(--muted);">'+t('data_loading')+'</div>';
   body.appendChild(loader);
 
