@@ -138,10 +138,10 @@ function applyTranslations() {
 }
 
 const DB = {
-  get(k,def=[]){ try{const v=localStorage.getItem('PHOTOVIEW_'+k);return v?JSON.parse(v):def;}catch(e){return def;} },
-  set(k,v){ localStorage.setItem('PHOTOVIEW_'+k,JSON.stringify(v)); if(window.syncToFirestore) syncToFirestore(k,v); },
-  getOne(k,def){ try{const v=localStorage.getItem('PHOTOVIEW_'+k);return v!==null?JSON.parse(v):def;}catch(e){return def;} },
-  setOne(k,v){ localStorage.setItem('PHOTOVIEW_'+k,JSON.stringify(v)); if(window.syncToFirestore) syncToFirestore(k,v); },
+  get(k,def=[]){ try{const v=localStorage.getItem('chinabazar_'+k);return v?JSON.parse(v):def;}catch(e){return def;} },
+  set(k,v){ localStorage.setItem('chinabazar_'+k,JSON.stringify(v)); if(window.syncToFirestore) syncToFirestore(k,v); },
+  getOne(k,def){ try{const v=localStorage.getItem('chinabazar_'+k);return v!==null?JSON.parse(v):def;}catch(e){return def;} },
+  setOne(k,v){ localStorage.setItem('chinabazar_'+k,JSON.stringify(v)); if(window.syncToFirestore) syncToFirestore(k,v); },
 };
 
 const Store = {
